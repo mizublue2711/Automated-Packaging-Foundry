@@ -1,0 +1,6 @@
+{
+  "name": "Automated Packaging Foundry // Pre-Press Studio",
+  "description": "Industrial CAD and pre-press packaging engineering workbench with real-time 2D flat dieline synthesis, 3D folded prototype inspection, VectorCraft MCP icon synthesis, and PDF/X preflight auditing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

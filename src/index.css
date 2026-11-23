@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * {
+    border-radius: 0px !important;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #05050A;
+    color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom Industrial CAD Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #05050A;
+  border-left: 1px solid #1F1F2E;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F1F2E;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00E5FF;
+}
