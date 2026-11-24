@@ -6,3 +6,12 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local assets & master source files (raw design files, PSD, AI, INDD, heavy assets)
+local_assets/
+master_source/
+Brief_Packaging_Adaptation_BlueStone/
+*.psd
+*.ai
+*.indd
+
