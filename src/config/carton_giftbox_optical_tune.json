@@ -1,0 +1,16 @@
+{
+  "tuneVersion": "3.2.0",
+  "targetModel": "SCB-6119",
+  "opticalScaling": {
+    "cartonBodyPanels": {
+      "targetWidthPt": 530.0,
+      "verticalAdjustmentPt": -25.0,
+      "note": "Scale width to 530pt (yielding ~110pt height) and lower it by 25pt towards 'Slow Cooker' for visual gravity."
+    },
+    "giftBoxBanners": {
+      "targetHeightPt": 30.0,
+      "leftPaddingPt": 22.0,
+      "note": "Scale height to 30pt (yielding ~144pt width) with 22pt margin from the crease line."
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0.0",
+  "sources": {
+    "giftboxMaster": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Giftbox Master.ai",
+    "cartonMaster": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Carton box Master.ai",
+    "fontsDirectory": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Fonts"
+  },
+  "availableFontFiles": [
+    "Inter-roman.ttf",
+    "InterVariable.ttf",
+    "Inter_18pt-Medium.ttf",
+    "SVN-Gilroy Bold.otf",
+    "SVN-Gilroy Regular.otf",
+    "arialbd.ttf",
+    "helveticaneuebold.ttf"
+  ],
+  "safeZoneClamping": {
+    "trackingAdjustmentRange": [
+      -15,
+      -10
+    ],
+    "fontSizeStepDownPt": 0.5,
+    "minSafeMarginFromCreaseMm": 5.0
+  },
+  "tiers": {
+    "tier1_productHeadlineAndModelId": {
+      "fontFamily": "InterVariable",
+      "allFontsObserved": {
+        "Inter18pt-Medium": 1,
+        "SVN-GilroyBold": 5,
+        "Inter": 18,
+        "SVN-Gilroy": 7,
+        "InterVariable": 46,
+        "Arial-BoldMT": 8,
+        "HelveticaNeue-Bold": 3,
+        "ArialMT": 6,
+        "SVN-GilroySemiBold": 9
+      },
+      "pointSize": 37.28,
+      "minPointSize": 18.0,
+      "maxPointSize": 129.22,
+      "leading": 92.27,
+      "sampleCount": 103,
+      "samples": [
+        "Made in China",
+        "B\u1ea2O H\u00c0NH \u0110I\u1ec6N T\u1eec",
+        "24L",
+        "STEAM AIR FRYER",
+        "AFB - 5895"
+      ],
+      "outlineRequiredForPrint": true
+    },
+    "tier2_keySellingPoints": {
+      "fontFamily": "InterVariable",
+      "allFontsObserved": {
+        "InterVariable": 23,
+        "Arial-BoldMT": 2
+      },
+      "pointSize": 15.72,
+      "minPointSize": 13.05,
+      "maxPointSize": 17.92,
+      "leading": 18.0,
+      "sampleCount": 25,
+      "samples": [
+        "Serial No.",
+        "M\u00c3 \u0110\u0102NG K\u00dd",
+        "T\u1ed5ng \u0111\u00e0i h\u1ed7 tr\u1ee3:",
+        "1800 54 54 94",
+        "Import label"
+      ],
+      "fontWeight": "SemiBold / Bold",
+      "tracking": 0,
+      "caseStyling": "Title Case / Uppercase Callouts"
+    },
+    "tier3_technicalSpecTable": {
+      "fontFamily": "Inter",
+      "pointSize": 9.5,
+      "leading": 11.4,
+      "sampleCount": 0,
+      "columnAlignment": "Left-aligned label / Right-aligned value"
+    },
+    "tier4_legalAndEan13": {
+      "fontFamily": "Inter",
+      "pointSize": 7.5,
+      "leading": 9.0,
+      "sampleCount": 0,
+      "safetyClearanceMm": 5.0
+    }
+  },
+  "templateStats": {
+    "giftboxMasterSpanCount": 103,
+    "cartonMasterSpanCount": 25
+  }
+}

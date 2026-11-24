@@ -42,6 +42,7 @@ import {
 } from '../config/studioConfig';
 import { DynamicBoxEngine } from './DynamicBoxEngine';
 import { ShowcaseRecorderBar } from './ShowcaseRecorderBar';
+import packaging3dMaterials from '../config/packaging_3d_materials.json';
 
 interface PackagingViewportProps {
   lang: Language;

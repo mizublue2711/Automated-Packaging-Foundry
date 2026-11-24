@@ -1,0 +1,19 @@
+{
+  "modelId": "SCB-6119",
+  "materials": {
+    "carton": {
+      "map": "public/textures/packaging/SCB-6119/carton_scb6119_albedo.png",
+      "publicUrl": "/textures/packaging/SCB-6119/carton_scb6119_albedo.png",
+      "roughness": 0.82,
+      "metalness": 0.02,
+      "bumpScale": 0.005
+    },
+    "giftBox": {
+      "map": "public/textures/packaging/SCB-6119/giftbox_scb6119_albedo.png",
+      "publicUrl": "/textures/packaging/SCB-6119/giftbox_scb6119_albedo.png",
+      "roughness": 0.28,
+      "clearcoat": 0.55,
+      "clearcoatRoughness": 0.1
+    }
+  }
+}

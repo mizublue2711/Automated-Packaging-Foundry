@@ -1,0 +1,139 @@
+{
+  "generated_at": "2026-11-24T10:50:31.976150+00:00",
+  "directory_inventory": {
+    "exists": true,
+    "path": "/Users/macbookpro/Automated-Packaging-Foundry/local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119",
+    "total_files": 2,
+    "extensions": {
+      ".psd": 1,
+      ".indd": 1
+    },
+    "files": [
+      {
+        "relative_path": "Bia IM_SCB-6119.psd",
+        "extension": ".psd",
+        "size_bytes": 4249911,
+        "modified_iso": "2026-11-23T05:35:50+00:00"
+      },
+      {
+        "relative_path": "IM SCB-6119.indd",
+        "extension": ".indd",
+        "size_bytes": 167776256,
+        "modified_iso": "2024-10-04T04:14:10+00:00"
+      }
+    ]
+  },
+  "psd_cover_audit": {
+    "exists": true,
+    "path": "/Users/macbookpro/Automated-Packaging-Foundry/local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119/Bia IM_SCB-6119.psd",
+    "format": "PSD",
+    "width_px": 1240,
+    "height_px": 1692,
+    "dpi_x": 72.0,
+    "dpi_y": 72.0,
+    "color_mode": "CMYK",
+    "icc_profile": "Present (unparsed)",
+    "width_mm": 437.44,
+    "height_mm": 596.9,
+    "aspect_ratio_w_h": 0.7329,
+    "layout_type": "Single cover",
+    "pil_n_frames": 0,
+    "is_layered_via_pil": false,
+    "psd_tools_available": false,
+    "layer_note": "psd-tools not installed; checked via PIL only"
+  },
+  "master_pdf_audit": {
+    "exists": true,
+    "path": "/Users/macbookpro/Automated-Packaging-Foundry/local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/IM Master.pdf",
+    "page_count": 9,
+    "page_1_rect_pts": [
+      0.0,
+      0.0,
+      297.64,
+      411.02
+    ],
+    "page_1_rect_mm": [
+      0.0,
+      0.0,
+      105.0,
+      145.0
+    ],
+    "trim_width_mm": 105.0,
+    "trim_height_mm": 145.0,
+    "embedded_fonts": [
+      "CGFYNO+MyriadPro-Regular",
+      "CHYJNO+MyriadPro-It",
+      "GIXCRG+Wingdings-Regular",
+      "MRUMXU+MyriadPro-SemiboldIt",
+      "NRWRLS+SVN-Gilroy",
+      "NZUMLS+Inter",
+      "QUKFGM+MyriadPro-Semibold",
+      "WPFTHA+SVN-GilroyBold",
+      "ZCQBXU+MyriadPro-Bold"
+    ],
+    "front_cover_page_1": {
+      "page_number": 1,
+      "image_count": 1,
+      "image_rects": [
+        {
+          "xref": 99,
+          "rect_pts": [
+            167.81,
+            60.94,
+            262.96,
+            391.57
+          ],
+          "rect_mm": [
+            59.2,
+            21.5,
+            92.77,
+            138.14
+          ]
+        }
+      ],
+      "text_preview": [
+        "HƯỚNG DẪN SỬ DỤNG",
+        "MÁY",
+        "SẤY TÓC",
+        "MODEL: HDB-1965",
+        "Hãy giữ lại Hướng Dẫn Sử Dụng",
+        "vì sự an toàn của bạn"
+      ]
+    },
+    "back_cover_last_page": {
+      "page_number": 9,
+      "image_count": 1,
+      "image_rects": [
+        {
+          "xref": 33,
+          "rect_pts": [
+            -1.16,
+            -1.16,
+            298.79,
+            412.03
+          ],
+          "rect_mm": [
+            -0.41,
+            -0.41,
+            105.41,
+            145.35
+          ]
+        }
+      ],
+      "text_preview": []
+    }
+  },
+  "designcraft_cli_audit": {
+    "exists": true,
+    "path": "/Users/macbookpro/.local/bin/designcraft-cli",
+    "version": "designcraft-cli 0.21.1",
+    "main_help": "usage: designcraft-cli run [--in FILE | --sample] [--cmd ID[=JSON]]... [--page N] [--scale S] [--pdf-options JSON] [--export OUT] [--all-pages DIR]\n         (--page, --scale and --pdf-options apply to the exports that follow them)\n       designcraft-cli commands [FILTER]\n       designcraft-cli describe COMMAND\n       designcraft-cli script [FILE|-] [--in FILE | --sample] [--connect PORT] [--save OUT] [--export OUT] [--keep-going]\n       designcraft-cli app [--port PORT] COMMAND [JSON] | --method METHOD [JSON]\n       designcraft-cli mcp [--connect PORT] [--sample] [--automation-read-root DIR]... [--automation-write-root DIR]...\n         the roots confine every file the agent's commands read (open, placed images, data sources, libraries) and\n         write (save, export, package) to those folders, links followed. Each may be given more than once; a kind\n         left out grants none of its access.\n         They run the in-process server, so they conflict with --connect (a running app is not confined by them).\n       designcraft-cli perf [--pages N] [--frames N] [--chars N] [--images N] [--runs N] [--strict]\n       designcraft-cli bench FILE [--runs N]\n       designcraft-cli validate-pdf FILE.pdf [--standard x4|x1a]  # built-in PDF/X checks (including visible unembedded fonts; the standard defaults to the file's own)\n       designcraft-cli thumbnail FILE.designcraft OUT.png [SIZE]  # the saved first-page preview, at most SIZE px\n       designcraft-cli links\n       designcraft-cli --version\n\nCommunity: https://discord.gg/artcraft  ·  https://getartcraft.com/apps/designcraft  ·  https://github.com/storytold/designcraft",
+    "subcommands": {
+      "run": "usage: designcraft-cli run [--in FILE | --sample] [--cmd ID[=JSON]]... [--page N] [--scale S] [--pdf-options JSON] [--export OUT] [--all-pages DIR]\n         (--page, --scale and --pdf-options apply to the exports that follow them)",
+      "commands": "designcraft-cli commands [FILTER]",
+      "mcp": "designcraft-cli mcp [--connect PORT] [--sample] [--automation-read-root DIR]... [--automation-write-root DIR]...\n         the roots confine every file the agent's commands read (open, placed images, data sources, libraries) and\n         write (save, export, package) to those folders, links followed. Each may be given more than once; a kind\n         left out grants none of its access.\n         They run the in-process server, so they conflict with --connect (a running app is not confined by them).",
+      "validate-pdf": "designcraft-cli validate-pdf FILE.pdf [--standard x4|x1a]  # built-in PDF/X checks (including visible unembedded fonts; the standard defaults to the file's own)",
+      "thumbnail": "designcraft-cli thumbnail FILE.designcraft OUT.png [SIZE]  # the saved first-page preview, at most SIZE px"
+    }
+  }
+}

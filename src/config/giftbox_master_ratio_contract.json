@@ -1,0 +1,27 @@
+{
+  "contractVersion": "3.3.0",
+  "targetModel": "SCB-6119",
+  "masterExtraction": {
+    "sourceFile": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Giftbox Master.ai",
+    "targetElements": {
+      "blueBannerHeightPt": 68.0,
+      "masterWhiteLogoHeightPt": 48.0,
+      "proportionalHeightRatio": 0.706,
+      "leftMarginRatio": 0.35
+    }
+  },
+  "adaptationApplication": {
+    "giftBoxBanners": {
+      "targetHeightPt": 48.0,
+      "verticalCentering": true,
+      "leftPaddingPt": 24.0,
+      "color": "#FFFFFF",
+      "lockNativeAspectRatio": true,
+      "applyTo": ["banner_1", "banner_2", "banner_3", "banner_4", "top_flap_180deg"]
+    },
+    "cartonBox": {
+      "status": "LOCKED_APPROVED",
+      "widthPt": 530.0
+    }
+  }
+}

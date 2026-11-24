@@ -1,0 +1,74 @@
+{
+  "contractVersion": "6.0.0",
+  "task": "RECONSTRUCT_IM_COVER",
+  "targetModel": "SCB-6119",
+  "canvasDimensions": {
+    "trimWidthMm": 105.0,
+    "trimHeightMm": 145.0,
+    "bleedMm": 3.0,
+    "targetDpi": 300,
+    "canvasWidthPx": 1240,
+    "canvasHeightPx": 1692
+  },
+  "masterDesignSystem": {
+    "background": "#FFFFFF",
+    "signatureOuterFrame": {
+      "strokeWidthPt": 1.5,
+      "strokeColor": "#222222",
+      "marginPt": 18.0,
+      "topLeftRadiusPt": 22.0,
+      "bottomLeftRadiusPt": 22.0,
+      "bottomRightRadiusPt": 22.0,
+      "topRightChamferCut": {
+        "xOffsetPt": 65.0,
+        "yOffsetPt": 85.0,
+        "note": "Diagonal chamfered cut at the top-right corner characteristic of the new BlueStone visual identity"
+      }
+    },
+    "leftContentHierarchy": {
+      "anchorXPt": 30.0,
+      "logo": {
+        "asset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "topYPt": 32.0,
+        "widthPt": 95.0,
+        "renderMode": "TRANSPARENT_VECTOR"
+      },
+      "productTitle": {
+        "text": "NỒI\nNẤU CHẬM",
+        "fontFamily": "SVN-GilroyBold",
+        "fontSizePt": 24.0,
+        "lineSpacingPt": 24.0,
+        "topYPt": 165.0,
+        "color": "#231F20"
+      },
+      "subtitle": {
+        "text": "HƯỚNG DẪN SỬ DỤNG",
+        "fontFamily": "Inter",
+        "fontWeight": "Medium",
+        "fontSizePt": 11.5,
+        "topYPt": 225.0,
+        "color": "#333333"
+      },
+      "modelSpec": {
+        "text": "MODEL: SCB-6119",
+        "fontFamily": "Inter",
+        "fontWeight": "Regular",
+        "fontSizePt": 9.5,
+        "topYPt": 248.0,
+        "color": "#555555"
+      },
+      "bottomSafetyNotice": {
+        "text": "Hãy giữ lại Hướng Dẫn Sử Dụng\nvì sự an toàn của bạn",
+        "fontFamily": "Inter",
+        "fontWeight": "Regular",
+        "fontSizePt": 6.8,
+        "bottomYPt": 375.0,
+        "color": "#444444"
+      }
+    },
+    "rightProductPlacement": {
+      "source": "Extract isolated product cutout from local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119/Bia IM_SCB-6119.psd",
+      "position": "Vertical center of the right half-plane, aligned with aesthetic breathing room matching IM Master"
+    }
+  }
+}

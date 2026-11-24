@@ -1,0 +1,28 @@
+{
+  "productionRulesVersion": "1.0.0",
+  "approvedModel": "SCB-6119",
+  "cartonBoxFormula": {
+    "bodyPanels": {
+      "targetWidthPt": 530.0,
+      "color": "#0033A0",
+      "dropWhiteBackground": true,
+      "alignment": "CENTER_ABOVE_PRODUCT_NAME"
+    },
+    "headerTable": {
+      "targetWidthPt": 240.0,
+      "renderMode": "TRANSPARENT_CMYK"
+    }
+  },
+  "giftBoxFormula": {
+    "blueBanners": {
+      "heightRatioToBanner": 0.70,
+      "color": "#FFFFFF",
+      "rightClearanceMinPt": 20.0,
+      "leftPaddingPt": 24.0
+    },
+    "headerTable": {
+      "renderMode": "TRANSPARENT_CMYK"
+    }
+  },
+  "status": "READY_FOR_CLIENT_DEMO"
+}

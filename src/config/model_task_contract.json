@@ -1,0 +1,299 @@
+{
+  "projectId": "BLUESTONE_ADAPTATION",
+  "totalModels": 13,
+  "models": [
+    {
+      "modelId": "SCB-6119",
+      "category": "KITCHEN_SLOW_COOKER",
+      "giftBox": {
+        "dimensions": {
+          "length": 1374.42,
+          "width": 971.81,
+          "height": 0,
+          "bleed": 3.0
+        },
+        "swatches": {
+          "spot": [],
+          "process": [
+            "Cyan",
+            "Magenta",
+            "Yellow",
+            "Black"
+          ]
+        },
+        "kspIcons": [],
+        "specsTableBoundingBox": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        }
+      },
+      "cartonBox": {
+        "dimensions": {
+          "length": 2247.67,
+          "width": 1589.27,
+          "height": 0
+        }
+      },
+      "instructionManual": {
+        "pageCount": 0,
+        "coverFrameId": "cover_IM SCB-6119"
+      }
+    }
+  ],
+  "harvestSummary": {
+    "sourceRoot": "local_assets/Brief_Packaging_Adaptation_BlueStone",
+    "aiFiles": [
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Carton box Master.ai",
+        "width_mm": 1784.22,
+        "height_mm": 1261.57,
+        "bleed_mm": 3.0,
+        "spot_colors": [],
+        "process_colors": [
+          "Cyan",
+          "Magenta",
+          "Yellow",
+          "Black"
+        ],
+        "bounding_boxes": {
+          "modelId": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "barcode": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "specsTable": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Giftbox Master.ai",
+        "width_mm": 2902.35,
+        "height_mm": 1768.95,
+        "bleed_mm": 3.0,
+        "spot_colors": [],
+        "process_colors": [
+          "Cyan",
+          "Magenta",
+          "Yellow",
+          "Black"
+        ],
+        "bounding_boxes": {
+          "modelId": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "barcode": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "specsTable": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "width_mm": 677.33,
+        "height_mm": 235.08,
+        "bleed_mm": 3.0,
+        "spot_colors": [],
+        "process_colors": [
+          "Cyan",
+          "Magenta",
+          "Yellow",
+          "Black"
+        ],
+        "bounding_boxes": {
+          "modelId": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "barcode": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "specsTable": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/Carton box SCB-6119.ai",
+        "width_mm": 2247.67,
+        "height_mm": 1589.27,
+        "bleed_mm": 3.0,
+        "spot_colors": [],
+        "process_colors": [
+          "Cyan",
+          "Magenta",
+          "Yellow",
+          "Black"
+        ],
+        "bounding_boxes": {
+          "modelId": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "barcode": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "specsTable": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/Gift box SCB-6119.ai",
+        "width_mm": 1374.42,
+        "height_mm": 971.81,
+        "bleed_mm": 3.0,
+        "spot_colors": [],
+        "process_colors": [
+          "Cyan",
+          "Magenta",
+          "Yellow",
+          "Black"
+        ],
+        "bounding_boxes": {
+          "modelId": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "barcode": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "specsTable": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/POP/POSM-Noi nau cham.ai",
+        "width_mm": 295.61,
+        "height_mm": 208.07,
+        "bleed_mm": 3.0,
+        "spot_colors": [
+          "Black"
+        ],
+        "process_colors": [
+          "Cyan",
+          "Magenta",
+          "Yellow",
+          "Black"
+        ],
+        "bounding_boxes": {
+          "modelId": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "barcode": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "specsTable": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      }
+    ],
+    "inddFiles": [
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119/IM SCB-6119.indd",
+        "pageCount": 0,
+        "spreadDimensions": {
+          "width_mm": 0.0,
+          "height_mm": 0.0
+        },
+        "coverFrameId": "cover_IM SCB-6119"
+      }
+    ],
+    "psdFiles": [
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Links/AFB-5895.psd",
+        "width_px": 2980,
+        "height_px": 2608,
+        "dpi": 300.0
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Links/AFB-5895_1.psd",
+        "width_px": 2980,
+        "height_px": 2608,
+        "dpi": 300.0
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Links/AFB-5895_front.psd",
+        "width_px": 2530,
+        "height_px": 2319,
+        "dpi": 300.0
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/SCB-6119.psd",
+        "width_px": 924,
+        "height_px": 1250,
+        "dpi": 300.0
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119/Bia IM_SCB-6119.psd",
+        "width_px": 1240,
+        "height_px": 1692,
+        "dpi": 300.0
+      },
+      {
+        "file": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/POP/BG.psd",
+        "width_px": 12251,
+        "height_px": 4078,
+        "dpi": 300.0
+      }
+    ]
+  }
+}

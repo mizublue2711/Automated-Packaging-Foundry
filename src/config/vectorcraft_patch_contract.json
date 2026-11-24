@@ -1,0 +1,18 @@
+{
+  "engine": "vectorcraft",
+  "target": "SCB-6119",
+  "workflow": {
+    "step_1_extract": "Export carton artboard to clean SVG using pdftocairo -svg or vectorcraft extract.",
+    "step_2_dom_cluster": "VectorCraft parses SVG DOM nodes. Group all child paths under target bounding envelopes into a single atomic compound path.",
+    "step_3_swap": "Replace the identified compound path node with the clean SVG paths of BlueStone_Primary Logo_CMYK.ai.",
+    "step_4_monochrome_force": "Apply fill='none' to all white backgrounds (#FFFFFF) and map stroke/fill to Cyan 100% (Pantone 286 C) for carton panels.",
+    "step_5_render": "Compile modified SVG back to production PDF and render 150 DPI preview JPG."
+  },
+  "bounding_targets": [
+    {"name": "header", "x": 600, "y": 175, "width": 290, "height": 185, "color_mode": "CMYK"},
+    {"name": "panel_1_front", "x": 660, "y": 1450, "width": 340, "height": 360, "color_mode": "MONO_BLUE"},
+    {"name": "panel_2_left", "x": 2050, "y": 1450, "width": 340, "height": 360, "color_mode": "MONO_BLUE"},
+    {"name": "panel_3_back", "x": 3410, "y": 1450, "width": 340, "height": 360, "color_mode": "MONO_BLUE"},
+    {"name": "panel_4_right", "x": 4800, "y": 1450, "width": 340, "height": 360, "color_mode": "MONO_BLUE"}
+  ]
+}

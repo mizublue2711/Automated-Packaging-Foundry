@@ -1,0 +1,70 @@
+{
+  "patchVersion": "2.1.0",
+  "targetModel": "SCB-6119",
+  "rootCauseAnalysis": {
+    "issue": "Sub-element replacement failure",
+    "details": "Detection only targeted the top wave icon (H=160.9pt), leaving legacy 'BlueStone' vector text intact below it and inserting the new logo inside the old wave bounds."
+  },
+  "geometryPatches": {
+    "cartonBoxLogos": [
+      {
+        "id": "logo_1_header",
+        "rawDetected": [609.2, 180.4, 883.1, 354.4],
+        "purgeEnvelope": [600.0, 175.0, 890.0, 360.0],
+        "replacementAsset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "renderMode": "CMYK_STRICT",
+        "dropWhiteBackground": true
+      },
+      {
+        "id": "logo_2_panel_front",
+        "rawDetectedIcon": [728.0, 1466.7, 934.6, 1627.6],
+        "purgeEnvelopeExpanded": [660.0, 1460.0, 1000.0, 1810.0],
+        "targetCenterAnchor": [831.3, 1635.0],
+        "targetWidthPt": 300.0,
+        "replacementAsset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "renderMode": "MONOCHROME_BLUE",
+        "colorCmyk": [1.0, 0.8, 0.0, 0.0],
+        "dropWhiteBackground": true
+      },
+      {
+        "id": "logo_3_panel_left",
+        "rawDetectedIcon": [2117.3, 1466.7, 2323.9, 1627.6],
+        "purgeEnvelopeExpanded": [2050.0, 1460.0, 2390.0, 1810.0],
+        "targetCenterAnchor": [2220.6, 1635.0],
+        "targetWidthPt": 300.0,
+        "replacementAsset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "renderMode": "MONOCHROME_BLUE",
+        "colorCmyk": [1.0, 0.8, 0.0, 0.0],
+        "dropWhiteBackground": true
+      },
+      {
+        "id": "logo_4_panel_back",
+        "rawDetectedIcon": [3475.4, 1466.7, 3682.1, 1627.6],
+        "purgeEnvelopeExpanded": [3410.0, 1460.0, 3750.0, 1810.0],
+        "targetCenterAnchor": [3578.7, 1635.0],
+        "targetWidthPt": 300.0,
+        "replacementAsset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "renderMode": "MONOCHROME_BLUE",
+        "colorCmyk": [1.0, 0.8, 0.0, 0.0],
+        "dropWhiteBackground": true
+      },
+      {
+        "id": "logo_5_panel_right",
+        "rawDetectedIcon": [4864.8, 1466.7, 5071.4, 1627.6],
+        "purgeEnvelopeExpanded": [4800.0, 1460.0, 5140.0, 1810.0],
+        "targetCenterAnchor": [4968.1, 1635.0],
+        "targetWidthPt": 300.0,
+        "replacementAsset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+        "renderMode": "MONOCHROME_BLUE",
+        "colorCmyk": [1.0, 0.8, 0.0, 0.0],
+        "dropWhiteBackground": true
+      }
+    ]
+  },
+  "executionRules": {
+    "step1_purge": "Delete/suppress ALL vector paths inside each 'purgeEnvelopeExpanded' (eliminating both the wave icon AND legacy 'BlueStone' text).",
+    "step2_insert": "Inject the replacement asset centered on 'targetCenterAnchor' scaled to 'targetWidthPt' with native aspect ratio locked.",
+    "step3_filter": "Strip all paths with fill color #FFFFFF or CMYK to ensure 100% background transparency on kraft board.",
+    "step4_gatekeeper": "Assert zero vector paths with legacy serif letterforms in Y= and verify preview JPG has zero white rectangular patches."
+  }
+}

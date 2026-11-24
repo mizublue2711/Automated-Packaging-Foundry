@@ -1,0 +1,37 @@
+{
+  "contractVersion": "4.0.0",
+  "documentType": "INSTRUCTION_MANUAL_IDML",
+  "targetModel": "SCB-6119",
+  "pipeline": {
+    "step1_render_cover": {
+      "sourcePsd": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119/Bia IM_SCB-6119.psd",
+      "targetOutputPng": "local_assets/output/SCB-6119/Bia_IM_SCB-6119_300dpi.png",
+      "resolutionDpi": 300,
+      "colorMode": "CMYK_OR_HIGH_RES_RGB",
+      "targetDimensionsMm": [105.0, 145.0]
+    },
+    "step2_idml_dom_patch": {
+      "sourceIdml": "local_assets/Brief_Packaging_Adaptation_BlueStone/SCB-6119/layout/IM SCB-6119/IM SCB-6119.idml",
+      "targetAdaptedIdml": "local_assets/output/SCB-6119/IM_SCB-6119_adapted.idml",
+      "fontRemapping": {
+        "legacyHeadings": ["SVN-Gilroy", "SVN-GilroyBold"],
+        "legacyBody": "Inter",
+        "legacySpecs": "Inter"
+      },
+      "page1_cover_swap": {
+        "targetPage": 1,
+        "replaceImageLinkWith": "local_assets/output/SCB-6119/Bia_IM_SCB-6119_300dpi.png"
+      },
+      "backCover_logo_swap": {
+        "targetPage": "LAST_PAGE",
+        "replaceLogoWith": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai"
+      }
+    },
+    "step3_compile_and_verify": {
+      "engine": "designcraft-cli",
+      "outputPdf": "local_assets/output/SCB-6119/IM_SCB-6119_adapted.pdf",
+      "outputCoverPreviewJpg": "local_assets/output/SCB-6119/IM_SCB-6119_cover_preview.jpg",
+      "outputBackPreviewJpg": "local_assets/output/SCB-6119/IM_SCB-6119_back_preview.jpg"
+    }
+  }
+}

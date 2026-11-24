@@ -1,0 +1,53 @@
+{
+  "patchVersion": "3.0.0",
+  "targetModel": "SCB-6119",
+  "cartonBoxPatches": {
+    "headerLogo": {
+      "envelope": [500.0, 150.0, 920.0, 360.0],
+      "action": "PURGE_AND_INSERT",
+      "removeSolidBlueBackgroundRect": true,
+      "injectAsset": "local_assets/Brief_Packaging_Adaptation_BlueStone/Master cate KITCHEN/Logo moi/BlueStone_Primary Logo_CMYK.ai",
+      "renderMode": "TRANSPARENT_CMYK"
+    },
+    "bodyPanels": [
+      {
+        "panel": "front",
+        "purgeBox": [600.0, 1380.0, 1050.0, 1850.0],
+        "targetAnchor": [825.0, 1600.0],
+        "targetWidth": 320.0
+      },
+      {
+        "panel": "left",
+        "purgeBox": [1980.0, 1380.0, 2430.0, 1850.0],
+        "targetAnchor": [2205.0, 1600.0],
+        "targetWidth": 320.0
+      },
+      {
+        "panel": "back",
+        "purgeBox": [3340.0, 1380.0, 3790.0, 1850.0],
+        "targetAnchor": [3565.0, 1600.0],
+        "targetWidth": 320.0
+      },
+      {
+        "panel": "right",
+        "purgeBox": [4730.0, 1380.0, 5180.0, 1850.0],
+        "targetAnchor": [4955.0, 1600.0],
+        "targetWidth": 320.0
+      }
+    ]
+  },
+  "giftBoxPatches": {
+    "blueBanners": [
+      {"id": "banner_1", "purgeBox": [380.0, 1100.0, 850.0, 1280.0]},
+      {"id": "banner_2", "purgeBox": [950.0, 1100.0, 1420.0, 1280.0]},
+      {"id": "banner_3", "purgeBox": [1520.0, 1100.0, 1990.0, 1280.0]},
+      {"id": "banner_4", "purgeBox": [2090.0, 1100.0, 2560.0, 1280.0]},
+      {"id": "top_flap", "purgeBox": [420.0, 900.0, 880.0, 1050.0]}
+    ]
+  },
+  "executionRules": {
+    "strictClean": "Any SVG node or PDF path touching the 'purgeBox' MUST be completely deleted from the DOM before injection.",
+    "zeroBackground": "All injected logos must have fill='none' on their root containers to prevent opaque blue or white boxes.",
+    "monochromeCarton": "Injected paths on carton body panels must strictly use stroke/fill #0033A0 (C=100 M=80 Y=0 K=0) with zero ghosting text below."
+  }
+}
