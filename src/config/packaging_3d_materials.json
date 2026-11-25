@@ -1,19 +1,160 @@
 {
   "modelId": "SCB-6119",
+  "topology": "FEFCO 0201 / FEFCO 0215",
+  "dimensions": {
+    "length": 485,
+    "width": 485,
+    "height": 365,
+    "unit": "mm"
+  },
+  "giftBoxDimensions": {
+    "length": 230,
+    "width": 230,
+    "height": 330,
+    "caliperMm": 1.8,
+    "unit": "mm"
+  },
+  "panelAssignment": {
+    "front": "BlueStone logo + Slow Cooker graphic (Panel 0)",
+    "back": "BlueStone logo + Slow Cooker graphic (Panel 2)",
+    "left": "Shipping Marks & Spec table (Panel 3)",
+    "right": "Shipping Marks & Spec table (Panel 1)",
+    "topLid": "Clean kraft substrate (Bottom Flap sample)",
+    "base": "Clean kraft substrate (Bottom Flap sample)",
+    "flap": "Clean kraft substrate (Bottom Flap sample)"
+  },
   "materials": {
     "carton": {
       "map": "public/textures/packaging/SCB-6119/carton_scb6119_albedo.png",
       "publicUrl": "/textures/packaging/SCB-6119/carton_scb6119_albedo.png",
       "roughness": 0.82,
       "metalness": 0.02,
-      "bumpScale": 0.005
+      "bumpScale": 0.005,
+      "panelUvRegions": {
+        "front": {
+          "offsetU": 0.000898,
+          "offsetV": 0.406946,
+          "repeatU": 0.247297,
+          "repeatV": 0.185788
+        },
+        "right": {
+          "offsetU": 0.251125,
+          "offsetV": 0.406946,
+          "repeatU": 0.24741,
+          "repeatV": 0.185788
+        },
+        "back": {
+          "offsetU": 0.501465,
+          "offsetV": 0.406946,
+          "repeatU": 0.24741,
+          "repeatV": 0.185788
+        },
+        "left": {
+          "offsetU": 0.751805,
+          "offsetV": 0.406946,
+          "repeatU": 0.247297,
+          "repeatV": 0.185788
+        },
+        "topLid": {
+          "offsetU": 0.256984,
+          "offsetV": 0.287636,
+          "repeatU": 0.235692,
+          "repeatV": 0.110521
+        },
+        "base": {
+          "offsetU": 0.256984,
+          "offsetV": 0.287636,
+          "repeatU": 0.235692,
+          "repeatV": 0.110521
+        },
+        "flap": {
+          "offsetU": 0.256984,
+          "offsetV": 0.287636,
+          "repeatU": 0.235692,
+          "repeatV": 0.110521
+        }
+      }
     },
     "giftBox": {
       "map": "public/textures/packaging/SCB-6119/giftbox_scb6119_albedo.png",
       "publicUrl": "/textures/packaging/SCB-6119/giftbox_scb6119_albedo.png",
       "roughness": 0.28,
       "clearcoat": 0.55,
-      "clearcoatRoughness": 0.1
+      "clearcoatRoughness": 0.1,
+      "panelUvBounds": {
+        "panel_front": [
+          0.009173,
+          0.283297,
+          0.239159,
+          0.614189
+        ],
+        "panel_right": [
+          0.2416,
+          0.283297,
+          0.471415,
+          0.614189
+        ],
+        "panel_back": [
+          0.473856,
+          0.283297,
+          0.703671,
+          0.614189
+        ],
+        "panel_left": [
+          0.706112,
+          0.283297,
+          0.935927,
+          0.614189
+        ],
+        "top_gable_front": [
+          0.009173,
+          0.61663,
+          0.239159,
+          0.838578
+        ],
+        "top_handle_right": [
+          0.2416,
+          0.61663,
+          0.471415,
+          0.838578
+        ],
+        "top_gable_back": [
+          0.473856,
+          0.61663,
+          0.703671,
+          0.838578
+        ],
+        "top_handle_left": [
+          0.706112,
+          0.61663,
+          0.935927,
+          0.838578
+        ],
+        "bottom_snap_front": [
+          0.009173,
+          0.136897,
+          0.239159,
+          0.280856
+        ],
+        "bottom_snap_right": [
+          0.2416,
+          0.136897,
+          0.471415,
+          0.280856
+        ],
+        "bottom_snap_back": [
+          0.473856,
+          0.136897,
+          0.703671,
+          0.280856
+        ],
+        "bottom_snap_left": [
+          0.706112,
+          0.136897,
+          0.935927,
+          0.280856
+        ]
+      }
     }
   }
 }

@@ -335,21 +335,30 @@ export const INK_SEPARATION_PLATES = [
 ];
 
 export const DEFAULT_AGENT_AN_PBR_PACK: AgentAnPbrTexturePack = {
-  packName: 'AN_PBR_BRUSHED_TITANIUM_UV_v2',
-  albedoMap:
-    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='120' height='120' fill='%230b1320'/><path d='M0 20h120M0 40h120M0 60h120M0 80h120M0 100h120' stroke='%2300e5ff' stroke-opacity='0.14' stroke-width='1'/><path d='M20 0v120M40 0v120M60 0v120M80 0v120M100 0v120' stroke='%235322ff' stroke-opacity='0.14' stroke-width='1'/></svg>",
+  packName: 'SCB-6119_CARTON_ALBEDO_4K',
+  albedoMap: '/textures/packaging/SCB-6119/carton_scb6119_albedo.png',
   normalMap:
     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='%238080ff'/><circle cx='16' cy='16' r='6' fill='none' stroke='%239999ff' stroke-width='1.5'/><circle cx='48' cy='48' r='6' fill='none' stroke='%236666ff' stroke-width='1.5'/><path d='M0 32h64M32 0v64' stroke='%237070ff' stroke-width='1'/></svg>",
   roughnessMap:
     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='%23383838'/><rect x='8' y='8' width='20' height='20' fill='%23181818'/><rect x='36' y='36' width='20' height='20' fill='%23181818'/></svg>",
-  roughness: 0.24,
-  metalness: 0.72,
-  normalScale: 1.0,
+  roughness: 0.82,
+  metalness: 0.02,
+  normalScale: 0.005,
   gsm: 610,
 };
 
 export const AGENT_AN_PROCEDURAL_PBR_PACKS: AgentAnPbrTexturePack[] = [
   DEFAULT_AGENT_AN_PBR_PACK,
+  {
+    packName: 'SCB-6119_GIFTBOX_ALBEDO_4K',
+    albedoMap: '/textures/packaging/SCB-6119/giftbox_scb6119_albedo.png',
+    normalMap: DEFAULT_AGENT_AN_PBR_PACK.normalMap,
+    roughnessMap: DEFAULT_AGENT_AN_PBR_PACK.roughnessMap,
+    roughness: 0.28,
+    metalness: 0.05,
+    normalScale: 0.25,
+    gsm: 640,
+  },
   {
     packName: 'AN_PBR_HEX_CARBON_SPOT_FOIL',
     roughness: 0.14,
@@ -378,44 +387,45 @@ export const AGENT_AN_PROCEDURAL_PBR_PACKS: AgentAnPbrTexturePack[] = [
   },
 ];
 
-export const INITIAL_AGENT_CONTRACT: PackagingContract = {
+export const SCB6119_CARTON_CONTRACT: PackagingContract = {
   product: {
-    model: 'AFB-5888',
-    category: 'Nồi chiên không dầu điện tử',
+    model: 'SCB-6119',
+    category: 'Slow Cooker / Nồi nấu chậm',
     brand: 'BlueStone',
-    artworkType: 'GIFT_BOX',
+    artworkType: 'CARTON_BOX',
     dimensions: {
-      length_mm: 380,
-      width_mm: 320,
-      height_mm: 395,
+      length_mm: 485,
+      width_mm: 485,
+      height_mm: 365,
       bleed_mm: 3.0,
     },
   },
   technicalSpecs: [
-    { id: 'voltage', label: 'Điện áp', value: '220V - 50Hz', required: true },
-    { id: 'power', label: 'Công suất', value: '1800W', required: true },
-    { id: 'capacity', label: 'Dung tích', value: '6.5 Lít', required: true },
-    { id: 'barcode', label: 'Mã vạch EAN-13', value: '8935219412345', required: true },
+    { id: 'voltage', label: 'Điện áp', value: '220-240V ~ 50Hz', required: true },
+    { id: 'power', label: 'Đóng gói', value: '04 Pcs/CTN', required: true },
+    { id: 'capacity', label: 'Khối lượng', value: 'N.W 10kg / G.W 12kg', required: true },
+    { id: 'barcode', label: 'Mã vạch EAN-13', value: '8936040464170', required: true },
   ],
   dynamicSpecs: [
-    { id: 'temp_range', label: 'Dải nhiệt độ', value: '40°C - 200°C' },
-    { id: 'timer', label: 'Hẹn giờ', value: '60 Phút' },
+    { id: 'cbm', label: 'Thể tích (CBM)', value: '0.09 CBM' },
+    { id: 'ship_to', label: 'Điểm đến', value: 'Vietnam' },
   ],
   keySellingPoints: [
     {
       id: 'ksp-1',
-      title: 'Rapid Air 360°',
-      description: 'Giảm 80% dầu mỡ thừa',
+      title: '5-Layer Kraft',
+      description: 'Carton brown paper (5 layers)',
       status: 'READY',
       iconSvg:
         "<svg viewBox='0 0 48 48' fill='none' stroke='currentColor' stroke-width='1.5'><circle cx='24' cy='24' r='20'/><path d='M16 24c4-8 12-8 16 0-4 8-12 8-16 0z'/></svg>",
     },
     {
       id: 'ksp-2',
-      title: 'Chống dính Greblon',
-      description: 'Chuẩn Đức, bền bỉ',
-      status: 'PENDING_AGENT_DRAW',
-      iconSvg: null,
+      title: 'FEFCO 0201 (RSC)',
+      description: '485 × 485 × 365 mm Master Carton',
+      status: 'READY',
+      iconSvg:
+        "<svg viewBox='0 0 48 48' fill='none' stroke='currentColor' stroke-width='1.5'><rect x='7' y='7' width='34' height='34'/><line x1='7' y1='18' x2='41' y2='18'/><line x1='7' y1='30' x2='41' y2='30'/><line x1='18' y1='7' x2='18' y2='41'/><line x1='30' y1='7' x2='30' y2='41'/><circle cx='24' cy='24' r='5'/></svg>",
     },
   ],
   preflight: {
@@ -427,15 +437,169 @@ export const INITIAL_AGENT_CONTRACT: PackagingContract = {
   },
 };
 
+export const SCB6119_GIFTBOX_CONTRACT: PackagingContract = {
+  product: {
+    model: 'SCB-6119',
+    category: 'Slow Cooker / Nồi nấu chậm 1.0L',
+    brand: 'BlueStone',
+    artworkType: 'GIFT_BOX',
+    dimensions: {
+      length_mm: 230,
+      width_mm: 230,
+      height_mm: 330,
+      bleed_mm: 3.0,
+    },
+  },
+  technicalSpecs: [
+    { id: 'voltage', label: 'Điện áp', value: '220-240V ~ 50Hz', required: true },
+    { id: 'power', label: 'Công suất', value: '200 W', required: true },
+    { id: 'capacity', label: 'Dung tích', value: '1.0 L', required: true },
+    { id: 'barcode', label: 'Mã vạch EAN-13', value: '8936040464170', required: true },
+  ],
+  dynamicSpecs: [
+    { id: 'weights', label: 'N.W / G.W', value: '2.10 kg / 2.45 kg' },
+    { id: 'timer', label: 'Hẹn giờ & Giữ ấm', value: '12 Tiếng / 8 Chế độ' },
+  ],
+  keySellingPoints: [
+    {
+      id: 'ksp-1',
+      title: 'Lòng nồi gốm sứ',
+      description: 'Tự nhiên cao cấp, an toàn sức khỏe',
+      status: 'READY',
+      iconSvg:
+        "<svg viewBox='0 0 48 48' fill='none' stroke='currentColor' stroke-width='1.5'><polygon points='24,4 42,14 42,34 24,44 6,34 6,14'/><path d='M18 24l4 4 8-8'/></svg>",
+    },
+    {
+      id: 'ksp-2',
+      title: 'Màn hình LED 1.0L',
+      description: '8 chức năng nấu chậm & giữ ấm 12h',
+      status: 'READY',
+      iconSvg:
+        "<svg viewBox='0 0 48 48' fill='none' stroke='currentColor' stroke-width='1.5'><rect x='6' y='8' width='36' height='32'/><line x1='6' y1='18' x2='42' y2='18'/><circle cx='16' cy='29' r='4'/><circle cx='32' cy='29' r='4'/></svg>",
+    },
+  ],
+  preflight: {
+    cmykColorSpace: true,
+    diecutOverprint: true,
+    barcodeVerified: true,
+    bleedPass: true,
+    fontOutlined: true,
+  },
+};
+
+export const INITIAL_AGENT_CONTRACT: PackagingContract = SCB6119_CARTON_CONTRACT;
+
+export interface FlatSheetCalibration {
+  mode: 'SCB6119_GIFT_BOX' | 'SCB6119_CARTON_BOX' | 'PARAMETRIC_FALLBACK';
+  structureCode: string;
+  flatWidthMm: number;
+  flatHeightMm: number;
+  panelWidthsMm: [number, number, number, number];
+  bodyHeightMm: number;
+  topFlapDepthMm: number;
+  bottomFlapDepthMm: number;
+  glueFlapWidthMm: number;
+  glueSide: 'LEFT' | 'RIGHT';
+  flatArtworkUrl: string | null;
+  /** Artwork placement in mm relative to (xPanel1, originY) */
+  artworkRectMm: { x: number; y: number; width: number; height: number } | null;
+  substrateFillHex: string;
+}
+
+export function computeFlatSheetCalibration(contract: PackagingContract): FlatSheetCalibration {
+  const { length_mm: L, width_mm: W, height_mm: H, bleed_mm: B } = contract.product.dimensions;
+  const { artworkType, model } = contract.product;
+  const isScb6119 = model.trim().toUpperCase() === 'SCB-6119';
+
+  if (artworkType === 'GIFT_BOX' && isScb6119) {
+    // True Structure: Integrated Handle Box with 1-2-3 Snap Bottom
+    // 4 Body Panels: 230 mm (W) x 330 mm (H); Nominal Sheet ~935 x 540 mm.
+    // Artwork crop preserves exact 1:1 physical millimeters (zero aspect-ratio stretching).
+    return {
+      mode: 'SCB6119_GIFT_BOX',
+      structureCode: 'INTEGRATED HANDLE + 1-2-3 SNAP BOTTOM',
+      flatWidthMm: 935,
+      flatHeightMm: 540,
+      panelWidthsMm: [W, L, W, L],
+      bodyHeightMm: H,
+      topFlapDepthMm: 248,
+      bottomFlapDepthMm: 146,
+      glueFlapWidthMm: 25,
+      glueSide: 'RIGHT',
+      flatArtworkUrl: '/textures/packaging/SCB-6119/giftbox_scb6119_flat_2d.jpg',
+      artworkRectMm: {
+        x: -3.05,
+        y: -250.44,
+        width: 951.15,
+        height: 729.15,
+      },
+      substrateFillHex: '#C7AC7F',
+    };
+  }
+
+  if (artworkType === 'CARTON_BOX' && isScb6119) {
+    // True Structure: FEFCO 0201 (RSC) Master Carton
+    // 4 Body Panels: 485 mm (W) x 365 mm (H), Top/Bottom Flaps: 242.5 mm each, Glue Tab: 40 mm -> 1980 x 850 mm.
+    const flapDepth = Math.round((W / 2) * 10) / 10; // 242.5 mm
+    const glueTab = 40;
+    const bodySpanW = W + L + W + L; // 1940 mm
+    const totalH = flapDepth + H + flapDepth; // 850 mm
+    return {
+      mode: 'SCB6119_CARTON_BOX',
+      structureCode: 'FEFCO 0201 (RSC) MASTER CARTON',
+      flatWidthMm: bodySpanW + glueTab, // 1980 mm
+      flatHeightMm: totalH, // 850 mm
+      panelWidthsMm: [L, W, L, W],
+      bodyHeightMm: H,
+      topFlapDepthMm: flapDepth,
+      bottomFlapDepthMm: flapDepth,
+      glueFlapWidthMm: glueTab,
+      glueSide: 'LEFT',
+      flatArtworkUrl: '/textures/packaging/SCB-6119/carton_scb6119_flat_2d.jpg',
+      artworkRectMm: {
+        x: 0,
+        y: -flapDepth,
+        width: bodySpanW,
+        height: totalH,
+      },
+      substrateFillHex: '#DEBB83',
+    };
+  }
+
+  const glueFlap = Math.max(30, Math.round(W * 0.11));
+  const topFlap = artworkType === 'CARTON_BOX' ? W / 2 : Math.round(W * 0.85) + Math.round(W * 0.2);
+  const botFlap = artworkType === 'CARTON_BOX' ? W / 2 : Math.round(W * 0.65);
+  return {
+    mode: 'PARAMETRIC_FALLBACK',
+    structureCode: artworkType === 'CARTON_BOX' ? 'FEFCO 0201 RSC' : 'FOLDING CARTON DIELINE',
+    flatWidthMm: Math.round(glueFlap + W + L + W + L + B * 2),
+    flatHeightMm: Math.round(topFlap + H + botFlap + B * 2),
+    panelWidthsMm: [W, L, W, L],
+    bodyHeightMm: H,
+    topFlapDepthMm: topFlap,
+    bottomFlapDepthMm: botFlap,
+    glueFlapWidthMm: glueFlap,
+    glueSide: 'LEFT',
+    flatArtworkUrl: null,
+    artworkRectMm: null,
+    substrateFillHex: '#0A0C14',
+  };
+}
+
 export const AGENT_AN_SAMPLE_CONTRACTS: Array<{
   id: string;
   label: string;
   contract: PackagingContract;
 }> = [
   {
-    id: 'AFB-5888',
-    label: 'AFB-5888 // 6.5L Digital Air Fryer (Default)',
-    contract: INITIAL_AGENT_CONTRACT,
+    id: 'SCB-6119-CARTON',
+    label: 'SCB-6119 // Slow Cooker Master Carton FEFCO 0201 (485×485×365mm)',
+    contract: SCB6119_CARTON_CONTRACT,
+  },
+  {
+    id: 'SCB-6119-GIFTBOX',
+    label: 'SCB-6119 // Slow Cooker Handle Gift Box (230×230×330mm)',
+    contract: SCB6119_GIFTBOX_CONTRACT,
   },
   {
     id: 'ICB-6619',

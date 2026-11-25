@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foundry.bluestone.local/schemas/box_topology.schema.json",
+  "title": "Parametric Box Kinematic Topology Schema",
+  "description": "Data-driven parametric topology contract for FEFCO corrugated cartons and folding gift boxes. Drives recursive 3D mesh instantiation, kinematic hinge folding, and normalized UV atlas mapping.",
+  "type": "object",
+  "required": [
+    "topologyId",
+    "standardCode",
+    "name",
+    "parametricDimensions",
+    "panels"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "topologyId": {
+      "type": "string",
+      "description": "Unique identifier for the box topology (e.g., FEFCO_0201_RSC, FEFCO_0215_TUCK)."
+    },
+    "standardCode": {
+      "type": "string",
+      "description": "FEFCO / ECMA structural standard code (e.g., FEFCO 0201, FEFCO 0215)."
+    },
+    "modelId": {
+      "type": "string",
+      "description": "Target product SKU/model identifier (e.g., SCB-6119)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the structural topology."
+    },
+    "description": {
+      "type": "string"
+    },
+    "interiorSubstrateHex": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "default": "#D1C7BD",
+      "description": "Hex color of the unprinted interior paperboard/kraft cavity face."
+    },
+    "glueTabWidthMm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 30
+    },
+    "parametricDimensions": {
+      "type": "object",
+      "required": ["length", "width", "height", "caliperMm"],
+      "properties": {
+        "length": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Box length (L) in millimeters."
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Box width (W) in millimeters."
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Box height (H) in millimeters."
+        },
+        "caliperMm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Board caliper / wall thickness in millimeters (e.g., 4.5 for 5-layer corrugated, 1.8 for E-flute)."
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["mm"],
+          "default": "mm"
+        }
+      },
+      "additionalProperties": false
+    },
+    "cameraLimitsMm": {
+      "type": "object",
+      "required": ["minDistanceMm", "maxDistanceMm", "defaultDistanceMm"],
+      "properties": {
+        "minDistanceMm": { "type": "number", "exclusiveMinimum": 0 },
+        "maxDistanceMm": { "type": "number", "exclusiveMinimum": 0 },
+        "defaultDistanceMm": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "panels": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Directed rooted tree/graph of packaging panels connected via parentId and attachEdge hinges.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "parentId",
+          "attachEdge",
+          "hingeAxis",
+          "maxFoldAngleDeg",
+          "foldSequencePriority",
+          "widthRule",
+          "heightRule",
+          "uvBounds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": ["string", "null"],
+            "description": "Parent panel id in the kinematic hinge graph, or null for the static root panel."
+          },
+          "attachEdge": {
+            "type": "string",
+            "enum": ["ROOT", "LEFT", "RIGHT", "TOP", "BOTTOM"],
+            "description": "Edge on the parent panel where this panel's crease hinge attaches."
+          },
+          "hingeAxis": {
+            "type": "string",
+            "enum": ["X", "Y"],
+            "description": "Local crease rotation axis (Y for vertical sleeve walls, X for horizontal top/bottom flaps)."
+          },
+          "maxFoldAngleDeg": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Signed target fold angle in degrees at foldProgress = 1.0."
+          },
+          "foldSequencePriority": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "Kinematic fold order priority: 0 = static root, 1 = fold first (e.g. body sleeve / inner flaps), 2 = fold over (secondary/inner flaps), 3 = fold over (outer closure flaps), 4 = tuck insertion."
+          },
+          "widthRule": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "length",
+                  "width",
+                  "height",
+                  "halfWidth",
+                  "halfLength",
+                  "lidLength",
+                  "lidWidth",
+                  "dustWidth",
+                  "dustHeight",
+                  "tuckLength",
+                  "tuckHeight",
+                  "glueTab",
+                  "glueHeight"
+                ]
+              },
+              { "type": "number", "exclusiveMinimum": 0 }
+            ],
+            "description": "Parametric width expression evaluated against parametricDimensions or fixed mm."
+          },
+          "heightRule": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "length",
+                  "width",
+                  "height",
+                  "halfWidth",
+                  "halfLength",
+                  "lidLength",
+                  "lidWidth",
+                  "dustWidth",
+                  "dustHeight",
+                  "tuckLength",
+                  "tuckHeight",
+                  "glueTab",
+                  "glueHeight"
+                ]
+              },
+              { "type": "number", "exclusiveMinimum": 0 }
+            ],
+            "description": "Parametric height expression evaluated against parametricDimensions or fixed mm."
+          },
+          "uvBounds": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "prefixItems": [
+              { "type": "number", "minimum": 0, "maximum": 1 },
+              { "type": "number", "minimum": 0, "maximum": 1 },
+              { "type": "number", "minimum": 0, "maximum": 1 },
+              { "type": "number", "minimum": 0, "maximum": 1 }
+            ],
+            "items": false,
+            "description": "Normalized Three.js UV crop bounds [uMin, vMin, uMax, vMax] (flipY=true: v=0 bottom, v=1 top)."
+          },
+          "textureSlot": {
+            "type": "string",
+            "enum": ["front", "back", "left", "right", "topLid", "base", "flap"],
+            "default": "flap",
+            "description": "Fallback procedural texture slot when no custom PBR atlas is bound."
+          },
+          "isInternalFlap": {
+            "type": "boolean",
+            "default": false,
+            "description": "Marks inner/under-folding flaps for depth-bias and caliper stacking clearance."
+          },
+          "layerOffsetMm": {
+            "type": "number",
+            "default": 0,
+            "description": "Optional signed normal clearance offset (mm) applied when folded to eliminate coplanar Z-fighting."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -115,7 +115,7 @@ export const FEFCO_0215_TOPOLOGY: PackagingTopology = {
   cameraLimitsMm: {
     minDistanceMm: 250,
     maxDistanceMm: 3600,
-    defaultDistanceMm: 860,
+    defaultDistanceMm: 1150,
   },
   panels: [
     // ========================================================================

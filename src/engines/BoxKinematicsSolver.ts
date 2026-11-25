@@ -22,10 +22,69 @@
  */
 
 import {
+  AttachEdge,
   DimensionToken,
+  HingeAxis,
   PackagingTopology,
+  TextureSlotId,
   TopologyPanelDefinition,
 } from '../config/topologies/fefco0215_tuck_end';
+
+export type ParametricDimensionRule =
+  | 'length'
+  | 'width'
+  | 'height'
+  | 'halfWidth'
+  | 'halfLength'
+  | 'lidLength'
+  | 'lidWidth'
+  | 'dustWidth'
+  | 'dustHeight'
+  | 'tuckLength'
+  | 'tuckHeight'
+  | 'glueTab'
+  | 'glueHeight'
+  | number;
+
+export interface BoxTopologyPanelNode {
+  id: string;
+  label: string;
+  parentId: string | null;
+  attachEdge: AttachEdge;
+  hingeAxis: HingeAxis;
+  maxFoldAngleDeg: number;
+  foldSequencePriority: number;
+  widthRule: ParametricDimensionRule;
+  heightRule: ParametricDimensionRule;
+  uvBounds: [number, number, number, number];
+  textureSlot?: TextureSlotId;
+  isInternalFlap?: boolean;
+  layerOffsetMm?: number;
+}
+
+export interface BoxTopologySpec {
+  $schema?: string;
+  topologyId: string;
+  standardCode: string;
+  modelId?: string;
+  name: string;
+  description?: string;
+  interiorSubstrateHex?: string;
+  glueTabWidthMm?: number;
+  parametricDimensions: {
+    length: number;
+    width: number;
+    height: number;
+    caliperMm: number;
+    unit?: string;
+  };
+  cameraLimitsMm?: {
+    minDistanceMm: number;
+    maxDistanceMm: number;
+    defaultDistanceMm: number;
+  };
+  panels: BoxTopologyPanelNode[];
+}
 
 export interface BoxDimensionsInput {
   L: number;
@@ -391,6 +450,203 @@ export function calculateBoxKinematics(
   const rootPanels = childrenByParent.get(null) || [];
   for (const rootPanel of rootPanels) {
     const rootSize = panelSizeMap.get(rootPanel.id) || [L, H, t];
+    solveNode(rootPanel, rootWorldMatrix, rootSize);
+  }
+
+  return output;
+}
+
+/**
+ * Evaluates a schema-driven ParametricDimensionRule into millimeters.
+ */
+export function resolveParametricDimensionRule(
+  rule: ParametricDimensionRule,
+  dims: { L: number; W: number; H: number; caliperMm: number; glueTabWidthMm: number }
+): number {
+  if (typeof rule === 'number') return rule;
+  const { L, W, H, caliperMm: t, glueTabWidthMm: glueMm } = dims;
+  switch (rule) {
+    case 'length':
+      return L;
+    case 'width':
+      return W;
+    case 'height':
+      return H;
+    case 'halfWidth':
+      return W * 0.5;
+    case 'halfLength':
+      return L * 0.5;
+    case 'lidLength':
+      return Math.max(10, L - t * 1.6);
+    case 'lidWidth':
+      return Math.max(10, W - t * 3.2);
+    case 'dustWidth':
+      return Math.max(10, W - t * 3.8);
+    case 'dustHeight':
+      return Math.min(L * 0.38, W * 0.46);
+    case 'tuckLength':
+      return Math.max(10, L - t * 4.2);
+    case 'tuckHeight':
+      return Math.min(H * 0.26, W * 0.32);
+    case 'glueTab':
+      return Math.max(glueMm, Math.min(W * 0.25, glueMm * 1.25));
+    case 'glueHeight':
+      return Math.max(10, H - t * 3.0);
+    default:
+      return L;
+  }
+}
+
+/**
+ * Schema-driven recursive kinematic solver consuming any JSON conforming to
+ * `src/config/box_topology.schema.json` (e.g., FEFCO_0201_RSC.json, FEFCO_0215_TUCK.json).
+ */
+export function solveTopologyGraphKinematics(
+  topology: BoxTopologySpec,
+  dimensionsOverride: Partial<BoxDimensionsInput> | null,
+  foldProgress: number
+): BoxKinematicsMap {
+  const p = clamp01(foldProgress);
+  const L = dimensionsOverride?.L ?? topology.parametricDimensions.length;
+  const W = dimensionsOverride?.W ?? topology.parametricDimensions.width;
+  const H = dimensionsOverride?.H ?? topology.parametricDimensions.height;
+  const caliperMm = topology.parametricDimensions.caliperMm;
+  const glueTabWidthMm = topology.glueTabWidthMm ?? 30;
+
+  const evalDims = { L, W, H, caliperMm, glueTabWidthMm };
+
+  // Build sorted priority tiers (>0) so foldSequencePriority 1 folds first, 2 folds over, etc.
+  const positivePriorities = Array.from(
+    new Set(
+      topology.panels
+        .map((panel) => panel.foldSequencePriority)
+        .filter((prio) => prio > 0)
+    )
+  ).sort((a, b) => a - b);
+
+  const priorityRangeMap = new Map<number, [number, number]>();
+  const tierCount = Math.max(1, positivePriorities.length);
+  positivePriorities.forEach((prio, idx) => {
+    priorityRangeMap.set(prio, [idx / tierCount, (idx + 1) / tierCount]);
+  });
+
+  // Evaluate physical sizes for all panels
+  const panelSizeMap = new Map<string, [number, number, number]>();
+  for (const panel of topology.panels) {
+    const w = resolveParametricDimensionRule(panel.widthRule, evalDims);
+    const h = resolveParametricDimensionRule(panel.heightRule, evalDims);
+    panelSizeMap.set(panel.id, [w, h, caliperMm]);
+  }
+
+  // Build parent -> children adjacency list
+  const childrenByParent = new Map<string | null, BoxTopologyPanelNode[]>();
+  for (const panel of topology.panels) {
+    const list = childrenByParent.get(panel.parentId) || [];
+    list.push(panel);
+    childrenByParent.set(panel.parentId, list);
+  }
+
+  // Center the folded box over (0, H/2, 0) smoothly during priority tier 1 (sleeve tube)
+  const firstTierRange = priorityRangeMap.get(positivePriorities[0] ?? 1) ?? [0, 0.34];
+  const sleeveProgress = smoothstep(p, firstTierRange[0], firstTierRange[1]);
+  const rootCenterZ = W * 0.5 * sleeveProgress;
+  const rootCenterY = H * 0.5;
+  const rootWorldMatrix = mat4Translate(0, rootCenterY, rootCenterZ);
+
+  const output: BoxKinematicsMap = {};
+
+  const solveNode = (
+    panel: BoxTopologyPanelNode,
+    parentCenterMatrix: Mat4,
+    parentSize: [number, number, number]
+  ) => {
+    const size = panelSizeMap.get(panel.id) || [L, H, caliperMm];
+    const [nodeW, nodeH] = size;
+    const [parentW, parentH] = parentSize;
+
+    const range = priorityRangeMap.get(panel.foldSequencePriority) ?? [0, 1];
+    const phaseProgress =
+      panel.attachEdge === 'ROOT' || panel.foldSequencePriority === 0
+        ? 1
+        : smoothstep(p, range[0], range[1]);
+
+    const localAngleRad =
+      panel.attachEdge === 'ROOT'
+        ? 0
+        : (panel.maxFoldAngleDeg * Math.PI * phaseProgress) / 180;
+
+    const layerOffset = panel.layerOffsetMm ?? 0;
+    const postRotateNormalZ = layerOffset * phaseProgress;
+    const hingeInwardZ =
+      panel.isInternalFlap && (panel.attachEdge === 'LEFT' || panel.attachEdge === 'RIGHT')
+        ? layerOffset * phaseProgress
+        : 0;
+    const rimVerticalAdjust =
+      panel.attachEdge === 'TOP' || panel.attachEdge === 'BOTTOM'
+        ? layerOffset * phaseProgress
+        : 0;
+
+    let currentCenterMatrix: Mat4;
+
+    if (panel.attachEdge === 'ROOT') {
+      currentCenterMatrix = parentCenterMatrix;
+    } else {
+      let hingeOffsetX = 0;
+      let hingeOffsetY = 0;
+      let childCenterOffsetX = 0;
+      let childCenterOffsetY = 0;
+
+      if (panel.attachEdge === 'LEFT') {
+        hingeOffsetX = -parentW * 0.5;
+        childCenterOffsetX = -nodeW * 0.5;
+      } else if (panel.attachEdge === 'RIGHT') {
+        hingeOffsetX = parentW * 0.5;
+        childCenterOffsetX = nodeW * 0.5;
+      } else if (panel.attachEdge === 'TOP') {
+        hingeOffsetY = parentH * 0.5 + rimVerticalAdjust;
+        childCenterOffsetY = nodeH * 0.5;
+      } else if (panel.attachEdge === 'BOTTOM') {
+        hingeOffsetY = -parentH * 0.5 - rimVerticalAdjust;
+        childCenterOffsetY = -nodeH * 0.5;
+      }
+
+      const toHingeMat = mat4Translate(hingeOffsetX, hingeOffsetY, hingeInwardZ);
+      const rotMat =
+        panel.hingeAxis === 'X'
+          ? mat4RotateX(localAngleRad)
+          : mat4RotateY(localAngleRad);
+      const toChildCenterMat = mat4Translate(
+        childCenterOffsetX,
+        childCenterOffsetY,
+        postRotateNormalZ
+      );
+
+      const hingeWorldMat = mat4Multiply(parentCenterMatrix, toHingeMat);
+      const rotatedHingeMat = mat4Multiply(hingeWorldMat, rotMat);
+      currentCenterMatrix = mat4Multiply(rotatedHingeMat, toChildCenterMat);
+    }
+
+    output[panel.id] = {
+      position: [
+        currentCenterMatrix[12],
+        currentCenterMatrix[13],
+        currentCenterMatrix[14],
+      ],
+      rotation: mat4ToEulerXYZ(currentCenterMatrix),
+      size,
+      localAngleRad,
+      phaseProgress,
+    };
+
+    const children = childrenByParent.get(panel.id) || [];
+    for (const child of children) {
+      solveNode(child, currentCenterMatrix, size);
+    }
+  };
+
+  const rootPanels = childrenByParent.get(null) || [];
+  for (const rootPanel of rootPanels) {
+    const rootSize = panelSizeMap.get(rootPanel.id) || [L, H, caliperMm];
     solveNode(rootPanel, rootWorldMatrix, rootSize);
   }
 

@@ -32,15 +32,23 @@ import {
   GeneratedBoxTextures,
   buildProceduralBoxTextures,
 } from '../utils/proceduralBoxTextures';
+import { TextureSlotId } from '../config/topologies/fefco0215_tuck_end';
+import fefco0201RscJson from '../config/topologies/FEFCO_0201_RSC.json';
+import fefco0215TuckJson from '../config/topologies/FEFCO_0215_TUCK.json';
 import {
-  FEFCO_0215_TOPOLOGY,
-  PanelId,
-} from '../config/topologies/fefco0215_tuck_end';
-import { calculateBoxKinematics } from '../engines/BoxKinematicsSolver';
+  BoxTopologyPanelNode,
+  BoxTopologySpec,
+  solveTopologyGraphKinematics,
+} from '../engines/BoxKinematicsSolver';
+
+const DEFAULT_CARTON_TOPOLOGY = fefco0201RscJson as unknown as BoxTopologySpec;
+const DEFAULT_GIFTBOX_TOPOLOGY = fefco0215TuckJson as unknown as BoxTopologySpec;
 
 export interface DynamicBoxEngineProps {
   lang: Language;
   contract: PackagingContract;
+  /** Data-driven kinematic topology JSON conforming to box_topology.schema.json */
+  topologyConfig?: BoxTopologySpec;
   /** Primary folding progress (0..100%) or normalized foldProgress (0.0..1.0) */
   foldPercent: number;
   foldProgress?: number;
@@ -114,14 +122,22 @@ function lerp(a: number, b: number, t: number): number {
 }
 
 interface PanelMeshRecord {
-  id: PanelId;
+  id: string;
   mesh: THREE.Mesh;
+}
+
+interface PanelOuterMaterialRecord {
+  id: string;
+  textureSlot: TextureSlotId;
+  uvBounds: [number, number, number, number];
+  material: THREE.MeshPhysicalMaterial;
 }
 
 interface PresentationRigState {
   rootGroup: THREE.Group;
   panelMeshes: PanelMeshRecord[];
   outerMaterials: THREE.MeshPhysicalMaterial[];
+  panelOuterMaterials: PanelOuterMaterialRecord[];
   innerMaterial: THREE.MeshStandardMaterial;
   edgeLines: THREE.LineSegments[];
   unitPerMm: number;
@@ -132,6 +148,7 @@ interface PresentationRigState {
 export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
   lang,
   contract,
+  topologyConfig,
   foldPercent,
   foldProgress,
   onFoldPercentChange,
@@ -160,19 +177,31 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
   const fullT = getTranslation(lang);
   const t = fullT.col2;
 
+  const activeTopology: BoxTopologySpec =
+    topologyConfig ??
+    (contract.product.artworkType === 'CARTON_BOX'
+      ? DEFAULT_CARTON_TOPOLOGY
+      : DEFAULT_GIFTBOX_TOPOLOGY);
+  const activeTopologyRef = useRef<BoxTopologySpec>(activeTopology);
+  activeTopologyRef.current = activeTopology;
+
   const resolvedSubstrate = materialPreset ?? activeSubstrate;
   const resolvedZoom = zoomScale ?? zoom;
   const resolvedFoldPercent =
     typeof foldProgress === 'number' ? foldProgress * 100 : foldPercent;
 
-  const { minDistanceMm, maxDistanceMm, defaultDistanceMm } =
-    FEFCO_0215_TOPOLOGY.cameraLimitsMm;
+  const {
+    minDistanceMm = 250,
+    maxDistanceMm = 3600,
+    defaultDistanceMm = 1150,
+  } = activeTopology.cameraLimitsMm ?? {};
 
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rigRef = useRef<PresentationRigState | null>(null);
+  const [rigVersion, setRigVersion] = useState<number>(0);
   const texturesRef = useRef<GeneratedBoxTextures | null>(null);
   const requestRenderRef = useRef<() => void>(() => {});
 
@@ -281,14 +310,14 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     onZoomChange,
   ]);
 
-  // Query pure kinematics solver (File 2) and apply 3D positions & Euler angles to all panel meshes
+  // Query schema-driven kinematics solver and apply 3D positions & Euler angles to all panel meshes
   const syncMeshesWithKinematicsSolver = (percent: number) => {
     const rig = rigRef.current;
     if (!rig) return;
 
     const normalizedProgress = clamp01(percent / 100);
-    const poses = calculateBoxKinematics(
-      FEFCO_0215_TOPOLOGY,
+    const poses = solveTopologyGraphKinematics(
+      activeTopologyRef.current,
       dimsRef.current,
       normalizedProgress
     );
@@ -326,7 +355,7 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
 
     const p = clamp01(percent / 100);
     const boxHeightUnits = rig ? rig.boxHeightUnits : 1.5;
-    const unitPerMm = rig ? rig.unitPerMm : 1.65 / 380;
+    const unitPerMm = rig ? rig.unitPerMm : 1.65 / 485;
 
     const clampedMm = clamp(distanceMm, minDistanceMm, maxDistanceMm);
     const radiusUnits = clampedMm * unitPerMm;
@@ -582,7 +611,7 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     };
   }, []);
 
-  // Build Panel Meshes from FEFCO_0215_TOPOLOGY (File 1) & initial poses from calculateBoxKinematics (File 2)
+  // Recursively instantiate Three.js panel meshes from the active BoxTopologySpec JSON graph
   useEffect(() => {
     const scene = sceneRef.current;
     const renderer = rendererRef.current;
@@ -619,8 +648,8 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     const unitPerMm = 1.65 / maxMm;
     const boxHeightUnits = H * unitPerMm;
 
-    const initialPoses = calculateBoxKinematics(
-      FEFCO_0215_TOPOLOGY,
+    const initialPoses = solveTopologyGraphKinematics(
+      activeTopology,
       { L, W, H },
       clamp01(foldPercentRef.current / 100)
     );
@@ -628,13 +657,13 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     const geometriesToDispose: THREE.BufferGeometry[] = [];
     const materialsToDispose: THREE.Material[] = [];
     const outerMaterials: THREE.MeshPhysicalMaterial[] = [];
+    const panelOuterMaterials: PanelOuterMaterialRecord[] = [];
     const edgeLines: THREE.LineSegments[] = [];
     const panelMeshes: PanelMeshRecord[] = [];
 
-    // Inner cavity faces (-Z in panel space): Raw unprinted Kraft/Greyboard substrate (#D1C7BD)
-    // Positive polygonOffset pushes internal substrate back in the depth buffer
+    // Inner cavity faces (-Z in panel space): Raw unprinted Kraft/Greyboard substrate
     const innerMaterial = new THREE.MeshStandardMaterial({
-      color: FEFCO_0215_TOPOLOGY.interiorSubstrateHex || '#D1C7BD',
+      color: activeTopology.interiorSubstrateHex || '#D1C7BD',
       roughness: 0.9,
       metalness: 0.02,
       side: THREE.FrontSide,
@@ -647,7 +676,6 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     });
     materialsToDispose.push(innerMaterial);
 
-    // Thin cut edge trim material (pushed slightly back in depth buffer so it never Z-fights with outer lids)
     const cutEdgeMaterial = new THREE.MeshStandardMaterial({
       color: '#B8AEA2',
       roughness: 0.92,
@@ -672,12 +700,23 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     const rootGroup = new THREE.Group();
     rootGroup.position.set(0, 0.01, 0);
 
-    // Map over all 13 panels from FEFCO_0215_TOPOLOGY (File 1)
-    for (const panelDef of FEFCO_0215_TOPOLOGY.panels) {
+    // Build parent -> children graph and recursively instantiate panel meshes
+    const childrenByParent = new Map<string | null, BoxTopologyPanelNode[]>();
+    for (const panelDef of activeTopology.panels) {
+      const siblings = childrenByParent.get(panelDef.parentId) || [];
+      siblings.push(panelDef);
+      childrenByParent.set(panelDef.parentId, siblings);
+    }
+
+    const visitedPanelIds = new Set<string>();
+    const instantiatePanelSubtree = (panelDef: BoxTopologyPanelNode) => {
+      if (visitedPanelIds.has(panelDef.id)) return;
+      visitedPanelIds.add(panelDef.id);
+
       const pose = initialPoses[panelDef.id];
       const [widthMm, heightMm, thickMm] = pose
         ? pose.size
-        : [L, H, FEFCO_0215_TOPOLOGY.boardThicknessMm];
+        : [L, H, activeTopology.parametricDimensions.caliperMm];
 
       const wUnits = widthMm * unitPerMm;
       const hUnits = heightMm * unitPerMm;
@@ -686,21 +725,10 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       const geo = new THREE.BoxGeometry(wUnits, hUnits, tUnits);
       geometriesToDispose.push(geo);
 
-      const isInternalFlap =
-        panelDef.id === 'glue_tab' ||
-        panelDef.id === 'top_dust_flap_left' ||
-        panelDef.id === 'top_dust_flap_right' ||
-        panelDef.id === 'bottom_dust_flap_left' ||
-        panelDef.id === 'bottom_dust_flap_right' ||
-        panelDef.id === 'top_tuck_flap' ||
-        panelDef.id === 'bottom_tuck_flap';
+      const isInternalFlap = Boolean(panelDef.isInternalFlap);
+      const textureSlot: TextureSlotId = panelDef.textureSlot ?? 'flap';
+      const artTex = textures[textureSlot];
 
-      const artTex = textures[panelDef.textureSlot];
-      // Activate Three.js polygonOffset & Material Depth Bias:
-      // - Exterior printed panels (front, back, left, right, top_lid, bottom_lid):
-      //   polygonOffsetFactor = -1.0, polygonOffsetUnits = -4.0 (strictly prioritized in front of internal flaps)
-      // - Internal flaps (dust flaps, tuck flaps, glue tab):
-      //   polygonOffsetFactor = +1.0, polygonOffsetUnits = +4.0 (pushed behind outer panels in the depth buffer)
       const outerMat = new THREE.MeshPhysicalMaterial({
         map: artTex,
         color: '#FFFFFF',
@@ -720,14 +748,13 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       });
       materialsToDispose.push(outerMat);
       outerMaterials.push(outerMat);
+      panelOuterMaterials.push({
+        id: panelDef.id,
+        textureSlot,
+        uvBounds: panelDef.uvBounds,
+        material: outerMat,
+      });
 
-      // BoxGeometry material groups:
-      // 0: +X (right cut edge)
-      // 1: -X (left cut edge)
-      // 2: +Y (top cut edge)
-      // 3: -Y (bottom cut edge)
-      // 4: +Z (EXTERIOR FACE — outward normal pointing away from box cavity) -> outerMat (BlueStone Artwork)
-      // 5: -Z (INTERIOR FACE — inward normal pointing into box cavity)       -> innerMaterial (#D1C7BD Greyboard)
       const faceMaterials = [
         cutEdgeMaterial,
         cutEdgeMaterial,
@@ -764,6 +791,16 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
 
       rootGroup.add(mesh);
       panelMeshes.push({ id: panelDef.id, mesh });
+
+      const children = childrenByParent.get(panelDef.id) || [];
+      for (const child of children) {
+        instantiatePanelSubtree(child);
+      }
+    };
+
+    const rootNodes = childrenByParent.get(null) || [];
+    for (const rootNode of rootNodes) {
+      instantiatePanelSubtree(rootNode);
     }
 
     scene.add(rootGroup);
@@ -772,6 +809,7 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       rootGroup,
       panelMeshes,
       outerMaterials,
+      panelOuterMaterials,
       innerMaterial,
       edgeLines,
       unitPerMm,
@@ -782,8 +820,10 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       },
     };
 
+    setRigVersion((v) => v + 1);
     requestRenderRef.current();
   }, [
+    activeTopology,
     contract,
     resolvedSubstrate,
     effectiveRoughness,
@@ -810,6 +850,93 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
     });
     requestRenderRef.current();
   }, [xrayMode]);
+
+  // Force Three.js material.map & schema-driven uvBounds cropping when rig or customPbrPack updates
+  useEffect(() => {
+    const rig = rigRef.current;
+    if (
+      !rig ||
+      !rig.panelOuterMaterials ||
+      resolvedSubstrate !== 'AGENT_AN_CUSTOM_PBR' ||
+      !customPbrPack?.albedoMap
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const loadedTextures: THREE.Texture[] = [];
+
+    console.log('🚀 AGENT AN PBR LOADED:', customPbrPack, {
+      topologyId: activeTopology.topologyId,
+      standardCode: activeTopology.standardCode,
+    });
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      customPbrPack.albedoMap,
+      (baseTexture) => {
+        if (cancelled) {
+          baseTexture.dispose();
+          return;
+        }
+        baseTexture.colorSpace = THREE.SRGBColorSpace;
+        baseTexture.anisotropy = 8;
+        baseTexture.wrapS = THREE.ClampToEdgeWrapping;
+        baseTexture.wrapT = THREE.ClampToEdgeWrapping;
+        baseTexture.needsUpdate = true;
+        loadedTextures.push(baseTexture);
+
+        const uvTextureCache = new Map<string, THREE.Texture>();
+
+        const getTextureForUvBounds = (
+          uvBounds: [number, number, number, number]
+        ): THREE.Texture => {
+          const [uMin, vMin, uMax, vMax] = uvBounds;
+          if (uMin === 0 && vMin === 0 && uMax === 1 && vMax === 1) {
+            return baseTexture;
+          }
+          const cacheKey = uvBounds.join(',');
+          const cached = uvTextureCache.get(cacheKey);
+          if (cached) return cached;
+
+          const croppedTex = baseTexture.clone();
+          croppedTex.colorSpace = THREE.SRGBColorSpace;
+          croppedTex.anisotropy = 8;
+          croppedTex.wrapS = THREE.ClampToEdgeWrapping;
+          croppedTex.wrapT = THREE.ClampToEdgeWrapping;
+          croppedTex.offset.set(uMin, vMin);
+          croppedTex.repeat.set(Math.max(0.0001, uMax - uMin), Math.max(0.0001, vMax - vMin));
+          croppedTex.needsUpdate = true;
+
+          uvTextureCache.set(cacheKey, croppedTex);
+          loadedTextures.push(croppedTex);
+          return croppedTex;
+        };
+
+        const isGlossyGiftBox =
+          contract.product.artworkType === 'GIFT_BOX' ||
+          Boolean(customPbrPack.albedoMap?.includes('giftbox_'));
+
+        rig.panelOuterMaterials.forEach(({ uvBounds, material }) => {
+          material.map = getTextureForUvBounds(uvBounds);
+          material.roughness = customPbrPack.roughness ?? (isGlossyGiftBox ? 0.28 : 0.82);
+          material.metalness = customPbrPack.metalness ?? (isGlossyGiftBox ? 0.04 : 0.02);
+          material.clearcoat = isGlossyGiftBox ? 0.55 : 0.04;
+          material.clearcoatRoughness = isGlossyGiftBox ? 0.1 : 0.6;
+          material.needsUpdate = true;
+        });
+        requestRenderRef.current?.();
+      },
+      undefined,
+      (err) => {
+        console.error('❌ Failed to load texture at:', customPbrPack.albedoMap, err);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      loadedTextures.forEach((tex) => tex.dispose());
+    };
+  }, [rigVersion, activeTopology, customPbrPack, resolvedSubstrate]);
 
   // Trigger render when foldProgress / foldPercent or camera angles update
   useEffect(() => {
@@ -1110,6 +1237,24 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       onPointerCancel={handlePointerUp}
       className="w-full h-full relative select-none overflow-hidden cursor-grab active:cursor-grabbing"
     >
+      {/* Visual Beacon for Active 3D Rig Verification */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          zIndex: 9999,
+          background: 'red',
+          color: 'white',
+          padding: 8,
+          fontSize: 18,
+          fontWeight: 'bold',
+          pointerEvents: 'none',
+        }}
+      >
+        AGENT_AN_RIG_ACTIVE: {rigVersion}
+      </div>
+
       {/* Top-Left Technical Telemetry Overlay (Zero backdrop-filter per Three.js WebGL spec) */}
       <div className="absolute top-3 left-3 z-20 bg-[#0A0C14] border border-[#1F1F2E] px-2.5 py-1.5 font-mono text-[10px] text-[#8A8FA3] tabular-nums flex flex-wrap items-center gap-3 pointer-events-none">
         <span className="flex items-center gap-1 text-[#00E5FF]">
@@ -1124,7 +1269,7 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
         </span>
         <span className="text-white hidden xl:inline">
           PBR: {baseSubstrateSpec.shortCode} | INNER:{' '}
-          {FEFCO_0215_TOPOLOGY.interiorSubstrateHex}
+          {activeTopology.interiorSubstrateHex || '#D1C7BD'}
         </span>
         {choreographyPhase !== 'IDLE' && (
           <span className="px-1.5 py-0.5 bg-[#5322FF] border border-[#00E5FF] text-white font-semibold">
@@ -1151,8 +1296,8 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
           {t.dragOrbitHint} // WHEEL ZOOM: {minDistanceMm}MM – {maxDistanceMm}MM
         </span>
         <span className="text-white tabular-nums">
-          TOPOLOGY: {FEFCO_0215_TOPOLOGY.standardCode} (
-          {FEFCO_0215_TOPOLOGY.panels.length} PANELS) // {t.foldedVolume}:{' '}
+          TOPOLOGY: {activeTopology.standardCode} (
+          {activeTopology.panels.length} PANELS) // {t.foldedVolume}:{' '}
           {((L * W * H) / 1_000_000).toFixed(2)} L ({L}×{W}×{H}MM)
         </span>
       </div>

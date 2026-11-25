@@ -25,6 +25,7 @@ import {
   INK_SEPARATION_PLATES,
   PREFLIGHT_RULE_CONFIG,
   SUBSTRATE_MATERIAL_CONFIG,
+  computeFlatSheetCalibration,
   countContractOverflows,
   evaluateEan13,
   getTranslation,
@@ -93,14 +94,10 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
   const passCount = evaluatedRules.filter((r) => r.pass).length;
   const allPassed = passCount === evaluatedRules.length;
 
-  // Live Telemetry Math
-  const glueFlap = Math.max(30, Math.round(W * 0.11));
-  const topTuckH = Math.round(W * 0.85);
-  const tuckTongueH = Math.round(W * 0.2);
-  const bottomFlapH = Math.round(W * 0.65);
-
-  const flatSheetW = glueFlap + W + L + W + L + B * 2;
-  const flatSheetH = topTuckH + tuckTongueH + H + bottomFlapH + B * 2;
+  // Live Telemetry Math (Calibrated per SCB-6119 FEFCO 0201 RSC vs Handle + 1-2-3 Snap Gift Box)
+  const flatCal = computeFlatSheetCalibration(contract);
+  const flatSheetW = flatCal.flatWidthMm;
+  const flatSheetH = flatCal.flatHeightMm;
   const surfaceAreaM2 = (flatSheetW * flatSheetH) / 1_000_000;
 
   const baseSubstrateSpec = SUBSTRATE_MATERIAL_CONFIG[activeSubstrate];

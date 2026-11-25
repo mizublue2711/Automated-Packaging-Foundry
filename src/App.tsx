@@ -22,7 +22,10 @@ import {
   DEFAULT_AGENT_AN_PBR_PACK,
   DEFAULT_CAD_LAYERS,
   INITIAL_AGENT_CONTRACT,
+  SCB6119_CARTON_CONTRACT,
+  SCB6119_GIFTBOX_CONTRACT,
   SUBSTRATE_MATERIAL_CONFIG,
+  computeFlatSheetCalibration,
   evaluateEan13,
   selectVectorCraftSvg,
 } from './config/studioConfig';
@@ -41,7 +44,7 @@ export default function App() {
 
   const [ingestionMeta, setIngestionMeta] = useState<IngestionMetadata>({
     agentId: 'AGENT_AN_v4.2',
-    batchId: 'AN-PKG-5888',
+    batchId: 'AN-PKG-SCB-6119',
     ingestedAt: 'SYNC_OK // 00:00:02s',
     overrideCount: 0,
   });
@@ -51,7 +54,7 @@ export default function App() {
   );
 
   const [activeSubstrate, setActiveSubstrate] =
-    useState<SubstratePresetId>('CCNB_EFLUTE_MATTE');
+    useState<SubstratePresetId>('AGENT_AN_CUSTOM_PBR');
   const [customPbrPack, setCustomPbrPack] = useState<AgentAnPbrTexturePack>(() =>
     structuredClone(DEFAULT_AGENT_AN_PBR_PACK)
   );
@@ -81,15 +84,83 @@ export default function App() {
     }));
   };
 
-  // Switch Artwork Mode from HeaderToolbar (reads defaultSubstrate from studioConfig.ts)
+  // Switch Artwork Mode from HeaderToolbar (syncs dimensions, specs, PBR albedoMap, and substrate finish)
   const handleSelectArtworkType = (type: ArtworkType) => {
-    setContract((prev) => ({
-      ...prev,
-      product: {
-        ...prev.product,
-        artworkType: type,
-      },
-    }));
+    setContract((prev) => {
+      const isScb6119 = prev.product.model.trim().toUpperCase() === 'SCB-6119';
+
+      if (isScb6119 && type === 'GIFT_BOX') {
+        const giftPreset = structuredClone(SCB6119_GIFTBOX_CONTRACT);
+        return {
+          ...giftPreset,
+          product: {
+            ...giftPreset.product,
+            dimensions: {
+              ...giftPreset.product.dimensions,
+              bleed_mm: prev.product.dimensions.bleed_mm,
+            },
+          },
+          preflight: prev.preflight,
+        };
+      }
+
+      if (isScb6119 && type === 'CARTON_BOX') {
+        const cartonPreset = structuredClone(SCB6119_CARTON_CONTRACT);
+        return {
+          ...cartonPreset,
+          product: {
+            ...cartonPreset.product,
+            dimensions: {
+              ...cartonPreset.product.dimensions,
+              bleed_mm: prev.product.dimensions.bleed_mm,
+            },
+          },
+          preflight: prev.preflight,
+        };
+      }
+
+      const nextDims =
+        type === 'GIFT_BOX'
+          ? { ...prev.product.dimensions, length_mm: 230, width_mm: 230, height_mm: 330 }
+          : type === 'CARTON_BOX'
+          ? { ...prev.product.dimensions, length_mm: 485, width_mm: 485, height_mm: 365 }
+          : prev.product.dimensions;
+
+      return {
+        ...prev,
+        product: {
+          ...prev.product,
+          artworkType: type,
+          dimensions: nextDims,
+        },
+      };
+    });
+
+    if (type === 'GIFT_BOX') {
+      setActiveSubstrate('AGENT_AN_CUSTOM_PBR');
+      setCustomPbrPack((prev) => ({
+        ...prev,
+        packName: 'SCB-6119_GIFTBOX_ALBEDO_4K',
+        albedoMap: '/textures/packaging/SCB-6119/giftbox_scb6119_albedo.png',
+        roughness: 0.28,
+        metalness: 0.04,
+        gsm: 350,
+      }));
+      return;
+    }
+
+    if (type === 'CARTON_BOX') {
+      setActiveSubstrate('AGENT_AN_CUSTOM_PBR');
+      setCustomPbrPack((prev) => ({
+        ...prev,
+        packName: 'SCB-6119_CARTON_ALBEDO_4K',
+        albedoMap: '/textures/packaging/SCB-6119/carton_scb6119_albedo.png',
+        roughness: 0.82,
+        metalness: 0.02,
+        gsm: 610,
+      }));
+      return;
+    }
 
     const modeConfig = ARTWORK_MODE_OPTIONS.find((m) => m.id === type);
     if (modeConfig && activeSubstrate !== 'AGENT_AN_CUSTOM_PBR') {
@@ -358,15 +429,9 @@ export default function App() {
   // Generate Production PDF/X Job Ticket
   const handleGeneratePdfX = () => {
     setIsGeneratingPdf(true);
-    const { length_mm: L, width_mm: W, height_mm: H, bleed_mm: B } =
-      contract.product.dimensions;
-    const glueFlap = Math.max(30, Math.round(W * 0.11));
-    const topTuckH = Math.round(W * 0.85);
-    const tuckTongueH = Math.round(W * 0.2);
-    const bottomFlapH = Math.round(W * 0.65);
-
-    const flatW = glueFlap + W + L + W + L + B * 2;
-    const flatH = topTuckH + tuckTongueH + H + bottomFlapH + B * 2;
+    const flatCal = computeFlatSheetCalibration(contract);
+    const flatW = flatCal.flatWidthMm;
+    const flatH = flatCal.flatHeightMm;
     const areaM2 = (flatW * flatH) / 1_000_000;
 
     const substrateSpec = SUBSTRATE_MATERIAL_CONFIG[activeSubstrate];
@@ -393,11 +458,11 @@ export default function App() {
   const handleResetStudio = () => {
     setContract(structuredClone(INITIAL_AGENT_CONTRACT));
     setLayers(structuredClone(DEFAULT_CAD_LAYERS));
-    setActiveSubstrate('CCNB_EFLUTE_MATTE');
+    setActiveSubstrate('AGENT_AN_CUSTOM_PBR');
     setCustomPbrPack(structuredClone(DEFAULT_AGENT_AN_PBR_PACK));
     setIngestionMeta({
       agentId: 'AGENT_AN_v4.2',
-      batchId: 'AN-PKG-5888',
+      batchId: 'AN-PKG-SCB-6119',
       ingestedAt: 'RESET_FACTORY_OK',
       overrideCount: 0,
     });

@@ -35,14 +35,27 @@ import {
   CAMERA_PRESET_CONFIG,
   OVERFLOW_THRESHOLDS,
   SUBSTRATE_MATERIAL_CONFIG,
+  computeFlatSheetCalibration,
   countContractOverflows,
   encodeEan13Bits,
   evaluateEan13,
   getTranslation,
 } from '../config/studioConfig';
+import {
+  SCB6119_GIFTBOX_CREASE_PATH_MM,
+  SCB6119_GIFTBOX_CUT_PATH_MM,
+} from '../config/scb6119FlatDielinePaths';
 import { DynamicBoxEngine } from './DynamicBoxEngine';
 import { ShowcaseRecorderBar } from './ShowcaseRecorderBar';
 import packaging3dMaterials from '../config/packaging_3d_materials.json';
+import fefco0201RscJson from '../config/topologies/FEFCO_0201_RSC.json';
+import fefco0215TuckJson from '../config/topologies/FEFCO_0215_TUCK.json';
+import { BoxTopologySpec } from '../engines/BoxKinematicsSolver';
+
+const TOPOLOGY_BY_ARTWORK_TYPE: Record<string, BoxTopologySpec> = {
+  CARTON_BOX: fefco0201RscJson as unknown as BoxTopologySpec,
+  GIFT_BOX: fefco0215TuckJson as unknown as BoxTopologySpec,
+};
 
 interface PackagingViewportProps {
   lang: Language;
@@ -89,7 +102,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [cursorMm, setCursorMm] = useState<{ x: number; y: number }>({ x: 380.0, y: 395.0 });
+  const [cursorMm, setCursorMm] = useState<{ x: number; y: number }>({ x: 485.0, y: 365.0 });
 
   // 3D WebGL Kinematic Folding, Camera Orbit & WebM Recorder State
   const [cameraAzimuthDeg, setCameraAzimuthDeg] = useState<number>(38);
@@ -127,6 +140,38 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
 
   const { length_mm: L, width_mm: W, height_mm: H, bleed_mm: B } = contract.product.dimensions;
   const artworkType = contract.product.artworkType;
+  const activeTopologyConfig: BoxTopologySpec =
+    TOPOLOGY_BY_ARTWORK_TYPE[artworkType] ?? TOPOLOGY_BY_ARTWORK_TYPE.CARTON_BOX;
+
+  // Enforce authentic SCB-6119 Gift Box vs Carton Box texture & glossy duplex PBR bindings on mode switch
+  useEffect(() => {
+    setPan({ x: 0, y: 0 });
+    if (artworkType === 'GIFT_BOX') {
+      const giftMat = packaging3dMaterials.materials.giftBox;
+      if (customPbrPack.albedoMap !== giftMat.publicUrl || customPbrPack.roughness !== giftMat.roughness) {
+        onSelectSubstrate('AGENT_AN_CUSTOM_PBR');
+        onUpdateCustomPbrPack({
+          packName: 'SCB-6119_GIFTBOX_ALBEDO_4K',
+          albedoMap: giftMat.publicUrl,
+          roughness: giftMat.roughness,
+          metalness: 0.04,
+          gsm: 350,
+        });
+      }
+    } else if (artworkType === 'CARTON_BOX') {
+      const cartonMat = packaging3dMaterials.materials.carton;
+      if (customPbrPack.albedoMap !== cartonMat.publicUrl || customPbrPack.roughness !== cartonMat.roughness) {
+        onSelectSubstrate('AGENT_AN_CUSTOM_PBR');
+        onUpdateCustomPbrPack({
+          packName: 'SCB-6119_CARTON_ALBEDO_4K',
+          albedoMap: cartonMat.publicUrl,
+          roughness: cartonMat.roughness,
+          metalness: cartonMat.metalness,
+          gsm: 610,
+        });
+      }
+    }
+  }, [artworkType]);
 
   // Resolve Effective Material Physics from studioConfig.ts
   const baseSubstrateSpec = SUBSTRATE_MATERIAL_CONFIG[activeSubstrate];
@@ -147,36 +192,54 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
   const getSpec = (id: string, fallback: string) =>
     contract.technicalSpecs.find((s) => s.id === id)?.value || fallback;
 
-  const voltageVal = getSpec('voltage', '220V - 50Hz');
-  const powerVal = getSpec('power', '1800W');
-  const capacityVal = getSpec('capacity', '6.5 Lít');
-  const barcodeVal = getSpec('barcode', '8935219412345');
+  const voltageVal = getSpec('voltage', '220-240V ~ 50Hz');
+  const powerVal = getSpec('power', '200 W');
+  const capacityVal = getSpec('capacity', '1.0 L');
+  const barcodeVal = getSpec('barcode', '8936040464170');
   const eanBits = encodeEan13Bits(barcodeVal);
   const eanInfo = evaluateEan13(barcodeVal);
 
-  // Compute physical flat dieline dimensions in mm
-  const glueFlap = Math.max(30, Math.round(W * 0.11));
+  // Calibrated 2D Flat Sheet Geometry (SCB-6119 Gift Box vs Carton Box vs Parametric Fallback)
+  const flatCal = computeFlatSheetCalibration(contract);
+  const totalFlatWidthMm = flatCal.flatWidthMm;
+  const totalFlatHeightMm = flatCal.flatHeightMm;
+
+  const isScbGiftBox = flatCal.mode === 'SCB6119_GIFT_BOX';
+  const isScbCartonBox = flatCal.mode === 'SCB6119_CARTON_BOX';
+
+  const glueFlap = flatCal.glueFlapWidthMm;
+  const topSpanMm = flatCal.topFlapDepthMm;
+  const botSpanMm = flatCal.bottomFlapDepthMm;
   const dustFlapH = Math.round(W * 0.55);
   const topTuckH = Math.round(W * 0.85);
   const tuckTongueH = Math.round(W * 0.2);
   const bottomFlapH = Math.round(W * 0.65);
 
-  const totalFlatWidthMm = glueFlap + W + L + W + L + B * 2;
-  const totalFlatHeightMm = topTuckH + tuckTongueH + H + bottomFlapH + B * 2;
+  const [pw1, pw2, pw3, pw4] = flatCal.panelWidthsMm;
+  const bodySpanWidthMm = pw1 + pw2 + pw3 + pw4;
+  const physicalCutWidthMm = bodySpanWidthMm + glueFlap;
+  const physicalCutHeightMm = topSpanMm + H + botSpanMm;
 
-  const pad = 110;
-  const svgW = totalFlatWidthMm + pad * 2;
-  const svgH = totalFlatHeightMm + pad * 2;
+  const padX = isScbCartonBox ? 160 : 120;
+  const padTop = isScbCartonBox ? 145 : 125;
+  const padBot = isScbCartonBox ? 155 : 130;
 
-  const originX = pad + B;
-  const originY = pad + B + topTuckH + tuckTongueH;
+  const svgW = physicalCutWidthMm + B * 2 + padX * 2;
+  const svgH = physicalCutHeightMm + B * 2 + padTop + padBot;
 
-  const xGlue = originX;
-  const xPanel1 = xGlue + glueFlap;
-  const xPanel2 = xPanel1 + W;
-  const xPanel3 = xPanel2 + L;
-  const xPanel4 = xPanel3 + W;
-  const xRightEdge = xPanel4 + L;
+  const leftCutX = padX + B;
+  const xGlue = flatCal.glueSide === 'LEFT' ? leftCutX : leftCutX + bodySpanWidthMm;
+  const xPanel1 = flatCal.glueSide === 'LEFT' ? leftCutX + glueFlap : leftCutX;
+  const xPanel2 = xPanel1 + pw1;
+  const xPanel3 = xPanel2 + pw2;
+  const xPanel4 = xPanel3 + pw3;
+  const xRightEdge = xPanel4 + pw4;
+  const xOuterRightCut = flatCal.glueSide === 'RIGHT' ? xRightEdge + glueFlap : xRightEdge;
+
+  const yTopCut = padTop + B;
+  const originY = yTopCut + topSpanMm;
+  const yBodyBot = originY + H;
+  const yBotCut = yBodyBot + botSpanMm;
 
   const activeLayerCount = Object.values(layers).filter(Boolean).length;
 
@@ -900,1001 +963,848 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                 </marker>
               </defs>
 
-              {/* PRE-PRESS REGISTRATION MARKS & CMYK COLOR BARS */}
-              <g>
-                {[
-                  { label: 'C:100', color: '#00E5FF' },
-                  { label: 'M:100', color: '#EC4899' },
-                  { label: 'Y:100', color: '#EAB308' },
-                  { label: 'K:100', color: '#374151' },
-                  { label: 'PMS_2935C', color: '#0055FF' },
-                  { label: 'SPOT_UV', color: '#5322FF' },
-                  { label: 'DIECUT_SPOT', color: '#EF4444' },
-                ].map((swatch, idx) => (
-                  <g key={swatch.label} transform={`translate(${pad + idx * 125}, 24)`}>
-                    <rect
-                      x={0}
-                      y={0}
-                      width={34}
-                      height={14}
-                      fill={swatch.color}
-                      stroke="#1F1F2E"
-                      strokeWidth={1}
-                    />
-                    <text
-                      x={40}
-                      y={11}
-                      fill="#8A8FA3"
-                      fontSize="11"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      {swatch.label}
-                    </text>
-                  </g>
-                ))}
+              {/* PRE-PRESS REGISTRATION MARKS, CMYK BARS & STRUCTURE TELEMETRY */}
+              {(() => {
+                const uiScale = isScbCartonBox ? 1.65 : 1.0;
+                const fsSmall = Math.round(11 * uiScale);
+                const fsMed = Math.round(13 * uiScale);
+                const fsLarge = Math.round(15 * uiScale);
+                const strokeCut = 2.0 * uiScale;
+                const strokeCrease = 1.8 * uiScale;
+                const strokeDim = 1.6 * uiScale;
+                const slotHalf = 2.5; // 5.0 mm FEFCO 0201 RSC flap slot gap
 
-                <text
-                  x={svgW - pad}
-                  y={35}
-                  textAnchor="end"
-                  fill="#00E5FF"
-                  fontSize="12"
-                  fontFamily="JetBrains Mono, monospace"
-                >
-                  SUBSTRATE: {baseSubstrateSpec.shortCode} (R:{effectiveRoughness.toFixed(2)} M:
-                  {effectiveMetalness.toFixed(2)} // {effectiveGsm}GSM)
-                </text>
-
-                {[
-                  { cx: 45, cy: 45 },
-                  { cx: svgW - 45, cy: 45 },
-                  { cx: 45, cy: svgH - 45 },
-                  { cx: svgW - 45, cy: svgH - 45 },
-                ].map((pt, idx) => (
-                  <g key={idx} transform={`translate(${pt.cx}, ${pt.cy})`}>
-                    <circle cx={0} cy={0} r={14} fill="none" stroke="#00E5FF" strokeWidth={1.2} />
-                    <circle cx={0} cy={0} r={6} fill="none" stroke="#EF4444" strokeWidth={1.2} />
-                    <line x1={-22} y1={0} x2={22} y2={0} stroke="#00E5FF" strokeWidth={1} />
-                    <line x1={0} y1={-22} x2={0} y2={22} stroke="#00E5FF" strokeWidth={1} />
-                  </g>
-                ))}
-              </g>
-
-              {/* 1. SUBSTRATE BASE FILL & PBR TEXTURE SIMULATION */}
-              <g>
-                <polygon
-                  points={`
-                    ${xGlue},${originY + 25}
-                    ${xPanel1},${originY}
-                    ${xPanel1},${originY + H}
-                    ${xGlue},${originY + H - 25}
-                  `}
-                  fill="url(#glueHatch)"
-                />
-
-                <rect
-                  x={xPanel1}
-                  y={originY}
-                  width={W + L + W + L}
-                  height={H}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-
-                {baseSubstrateSpec.patternType === 'MATTE_EFLUTE' && (
-                  <rect
-                    x={xPanel1}
-                    y={originY}
-                    width={W + L + W + L}
-                    height={H}
-                    fill="url(#efluteBump)"
-                  />
-                )}
-                {baseSubstrateSpec.patternType === 'KRAFT_FIBER' && (
-                  <rect
-                    x={xPanel1}
-                    y={originY}
-                    width={W + L + W + L}
-                    height={H}
-                    fill="url(#kraftFiber)"
-                  />
-                )}
-                {baseSubstrateSpec.patternType === 'GLOSS_IVORY' && (
-                  <rect
-                    x={xPanel1}
-                    y={originY}
-                    width={W + L + W + L}
-                    height={H}
-                    fill="url(#glossIvorySheen)"
-                  />
-                )}
-                {(baseSubstrateSpec.patternType === 'FOIL_SPOT_UV' ||
-                  baseSubstrateSpec.patternType === 'CUSTOM_PBR') && (
-                  <rect
-                    x={xPanel1}
-                    y={originY}
-                    width={W + L + W + L}
-                    height={H}
-                    fill="url(#metallicFoilSheen)"
-                  />
-                )}
-
-                <polygon
-                  points={`
-                    ${xPanel1},${originY}
-                    ${xPanel1 + 18},${originY - dustFlapH}
-                    ${xPanel2 - 18},${originY - dustFlapH}
-                    ${xPanel2},${originY}
-                  `}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-                <polygon
-                  points={`
-                    ${xPanel3},${originY}
-                    ${xPanel3 + 18},${originY - dustFlapH}
-                    ${xPanel4 - 18},${originY - dustFlapH}
-                    ${xPanel4},${originY}
-                  `}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-
-                <rect
-                  x={xPanel2}
-                  y={originY - topTuckH}
-                  width={L}
-                  height={topTuckH}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-                <polygon
-                  points={`
-                    ${xPanel2 + 24},${originY - topTuckH}
-                    ${xPanel2 + 48},${originY - topTuckH - tuckTongueH}
-                    ${xPanel3 - 48},${originY - topTuckH - tuckTongueH}
-                    ${xPanel3 - 24},${originY - topTuckH}
-                  `}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-
-                <rect
-                  x={xPanel1}
-                  y={originY + H}
-                  width={W}
-                  height={bottomFlapH * 0.8}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-                <rect
-                  x={xPanel2}
-                  y={originY + H}
-                  width={L}
-                  height={bottomFlapH}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-                <rect
-                  x={xPanel3}
-                  y={originY + H}
-                  width={W}
-                  height={bottomFlapH * 0.8}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-                <rect
-                  x={xPanel4}
-                  y={originY + H}
-                  width={L}
-                  height={bottomFlapH}
-                  fill={baseSubstrateSpec.surfaceTint2D}
-                />
-              </g>
-
-              {/* 2. ARTWORK PRINT LAYER */}
-              {layers.artwork && (
-                <g>
-                  <text
-                    x={xGlue + glueFlap / 2}
-                    y={originY + H / 2}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(-90, ${xGlue + glueFlap / 2}, ${originY + H / 2})`}
-                    fill="#8A8FA3"
-                    fontSize="12"
-                    fontFamily="JetBrains Mono, monospace"
-                    letterSpacing="3"
-                  >
-                    GLUE_FLAP // NO_INK_ZONE ({glueFlap}MM)
-                  </text>
-
-                  {/* PANEL 1 (LEFT SIDE PANEL - WIDTH W) */}
-                  <g transform={`translate(${xPanel1}, ${originY})`}>
-                    <rect
-                      x={16}
-                      y={20}
-                      width={W - 32}
-                      height={44}
-                      fill="#05050A"
-                      stroke={baseSubstrateSpec.borderAccent}
-                    />
-                    <text
-                      x={28}
-                      y={47}
-                      fill="#00E5FF"
-                      fontSize="20"
-                      fontWeight="700"
-                      fontFamily="Plus Jakarta Sans, sans-serif"
-                    >
-                      {contract.product.brand.toUpperCase()}
-                    </text>
-                    <text
-                      x={W - 28}
-                      y={46}
-                      textAnchor="end"
-                      fill="#FFFFFF"
-                      fontSize="14"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      {contract.product.model}
-                    </text>
-
-                    <text
-                      x={20}
-                      y={92}
-                      fill="#8A8FA3"
-                      fontSize="11"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      [ SIDE_PANEL_A // KSP_VECTOR_STACK ]
-                    </text>
-
-                    {contract.keySellingPoints.map((ksp, idx) => {
-                      const hasKspOverflow =
-                        ksp.title.length > OVERFLOW_THRESHOLDS.kspTitleMaxChars ||
-                        ksp.description.length > OVERFLOW_THRESHOLDS.kspDescriptionMaxChars;
-                      return (
-                        <g key={ksp.id} transform={`translate(20, ${108 + idx * 72})`}>
+                return (
+                  <>
+                    <g>
+                      {[
+                        { label: 'C', color: '#00E5FF' },
+                        { label: 'M', color: '#EC4899' },
+                        { label: 'Y', color: '#EAB308' },
+                        { label: 'K', color: '#374151' },
+                        { label: 'PMS286', color: '#004098' },
+                        { label: 'CUT', color: '#EF4444' },
+                        { label: 'FOLD', color: '#00E5FF' },
+                      ].map((swatch, idx) => (
+                        <g
+                          key={swatch.label}
+                          transform={`translate(${padX + idx * Math.round(58 * uiScale)}, ${Math.round(22 * uiScale)})`}
+                        >
                           <rect
                             x={0}
                             y={0}
-                            width={W - 40}
-                            height={60}
-                            fill="#05050A"
-                            stroke={
-                              hasKspOverflow
-                                ? '#EF4444'
-                                : ksp.status === 'READY'
-                                ? '#2D2D44'
-                                : '#5322FF'
-                            }
-                            strokeWidth={hasKspOverflow ? 2 : 1.2}
-                          />
-                          <rect
-                            x={10}
-                            y={10}
-                            width={40}
-                            height={40}
-                            fill="#0D0E17"
-                            stroke={ksp.status === 'READY' ? '#00E5FF' : '#5322FF'}
+                            width={Math.round(18 * uiScale)}
+                            height={Math.round(12 * uiScale)}
+                            fill={swatch.color}
+                            stroke="#1F1F2E"
                             strokeWidth={1}
                           />
-                          {ksp.iconSvg ? (
-                            <g
-                              transform="translate(14, 14) scale(0.66)"
-                              stroke="#00E5FF"
-                              fill="none"
-                              dangerouslySetInnerHTML={{
-                                __html: ksp.iconSvg
-                                  .replace(/<svg[^>]*>/, '')
-                                  .replace(/<\/svg>/, ''),
-                              }}
-                            />
-                          ) : (
-                            <text
-                              x={30}
-                              y={33}
-                              textAnchor="middle"
-                              fill="#5322FF"
-                              fontSize="9"
-                              fontFamily="JetBrains Mono, monospace"
-                            >
-                              PEND
-                            </text>
-                          )}
                           <text
-                            x={62}
-                            y={26}
-                            fill={hasKspOverflow ? '#EF4444' : '#FFFFFF'}
-                            fontSize="14"
-                            fontWeight="600"
-                            fontFamily="Plus Jakarta Sans, sans-serif"
-                          >
-                            {ksp.title}
-                          </text>
-                          <text
-                            x={62}
-                            y={44}
+                            x={Math.round(23 * uiScale)}
+                            y={Math.round(10 * uiScale)}
                             fill="#8A8FA3"
-                            fontSize="11"
-                            fontFamily="Plus Jakarta Sans, sans-serif"
+                            fontSize={fsSmall}
+                            fontFamily="JetBrains Mono, monospace"
                           >
-                            {ksp.description}
+                            {swatch.label}
                           </text>
                         </g>
-                      );
-                    })}
-
-                    <rect
-                      x={20}
-                      y={H - 68}
-                      width={W - 40}
-                      height={46}
-                      fill="#05050A"
-                      stroke="#1F1F2E"
-                    />
-                    <text
-                      x={32}
-                      y={H - 40}
-                      fill="#00E5FF"
-                      fontSize="13"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      {powerVal} // {capacityVal} // {voltageVal}
-                    </text>
-                  </g>
-
-                  {/* PANEL 2 (FRONT HERO DISPLAY PANEL - LENGTH L) */}
-                  <g transform={`translate(${xPanel2}, ${originY})`}>
-                    <rect
-                      x={20}
-                      y={20}
-                      width={L - 40}
-                      height={58}
-                      fill="#05050A"
-                      stroke={
-                        contract.product.brand.length > OVERFLOW_THRESHOLDS.brandMaxChars ||
-                        contract.product.model.length > OVERFLOW_THRESHOLDS.modelMaxChars
-                          ? '#EF4444'
-                          : activeSubstrate === 'METALLIC_FOIL_SPOT_UV'
-                          ? '#5322FF'
-                          : '#00E5FF'
-                      }
-                      strokeWidth={1.8}
-                    />
-                    <text
-                      x={36}
-                      y={57}
-                      fill="#FFFFFF"
-                      fontSize="28"
-                      fontWeight="700"
-                      fontFamily="Plus Jakarta Sans, sans-serif"
-                      letterSpacing="1"
-                    >
-                      {contract.product.brand}
-                    </text>
-                    <rect
-                      x={L - 165}
-                      y={32}
-                      width={130}
-                      height={34}
-                      fill="#5322FF"
-                      stroke="#00E5FF"
-                      strokeWidth={1}
-                    />
-                    <text
-                      x={L - 100}
-                      y={54}
-                      textAnchor="middle"
-                      fill="#FFFFFF"
-                      fontSize="16"
-                      fontWeight="700"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      {contract.product.model}
-                    </text>
-
-                    <text
-                      x={24}
-                      y={104}
-                      fill={
-                        contract.product.category.length > OVERFLOW_THRESHOLDS.categoryMaxChars
-                          ? '#EF4444'
-                          : '#00E5FF'
-                      }
-                      fontSize="16"
-                      fontWeight="600"
-                      fontFamily="Plus Jakarta Sans, sans-serif"
-                    >
-                      {contract.product.category.toUpperCase()}
-                    </text>
-                    <text
-                      x={L - 24}
-                      y={104}
-                      textAnchor="end"
-                      fill="#8A8FA3"
-                      fontSize="11"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      [ FRONT_PRIMARY_PANEL // {L}×{H}MM ]
-                    </text>
-
-                    <g transform="translate(24, 120)">
-                      <rect
-                        x={0}
-                        y={0}
-                        width={L - 48}
-                        height={Math.max(120, H - 235)}
-                        fill="#05050A"
-                        stroke="#2D2D44"
-                        strokeWidth={1.5}
-                      />
-
-                      <line
-                        x1={(L - 48) / 2}
-                        y1={10}
-                        x2={(L - 48) / 2}
-                        y2={Math.max(120, H - 245)}
-                        stroke="#1F1F2E"
-                        strokeDasharray="4 4"
-                      />
-                      <line
-                        x1={10}
-                        y1={Math.max(120, H - 235) / 2}
-                        x2={L - 58}
-                        y2={Math.max(120, H - 235) / 2}
-                        stroke="#1F1F2E"
-                        strokeDasharray="4 4"
-                      />
-
-                      <g
-                        transform={`translate(${(L - 48) / 2}, ${
-                          Math.max(120, H - 235) / 2
-                        })`}
-                      >
-                        <rect
-                          x={-65}
-                          y={-62}
-                          width={130}
-                          height={124}
-                          fill="#0D0E17"
-                          stroke="#00E5FF"
-                          strokeWidth={1.5}
-                        />
-                        <rect
-                          x={-48}
-                          y={-46}
-                          width={96}
-                          height={36}
-                          fill="#05050A"
-                          stroke="#5322FF"
-                          strokeWidth={1.2}
-                        />
-                        <text
-                          x={0}
-                          y={-24}
-                          textAnchor="middle"
-                          fill="#00E5FF"
-                          fontSize="13"
-                          fontFamily="JetBrains Mono, monospace"
-                        >
-                          200°C // 60M
-                        </text>
-                        <rect
-                          x={-52}
-                          y={0}
-                          width={104}
-                          height={50}
-                          fill="#05050A"
-                          stroke="#00E5FF"
-                          strokeWidth={1.2}
-                        />
-                        <line x1={-12} y1={-5} x2={12} y2={-5} stroke="#10B981" strokeWidth={3} />
-                        <text
-                          x={0}
-                          y={29}
-                          textAnchor="middle"
-                          fill="#FFFFFF"
-                          fontSize="14"
-                          fontWeight="700"
-                          fontFamily="JetBrains Mono, monospace"
-                        >
-                          {capacityVal}
-                        </text>
-                      </g>
+                      ))}
 
                       <text
-                        x={14}
-                        y={22}
-                        fill="#10B981"
-                        fontSize="11"
-                        fontFamily="JetBrains Mono, monospace"
-                      >
-                        [ {artworkType} // {baseSubstrateSpec.shortCode} ]
-                      </text>
-                      <text
-                        x={14}
-                        y={Math.max(120, H - 235) - 12}
-                        fill="#8A8FA3"
-                        fontSize="11"
-                        fontFamily="JetBrains Mono, monospace"
-                      >
-                        PWR: {powerVal} | VOLT: {voltageVal}
-                      </text>
-                    </g>
-
-                    {/* Front Bottom KSP Feature Bar */}
-                    <g transform={`translate(24, ${H - 96})`}>
-                      {contract.keySellingPoints.slice(0, 3).map((ksp, i) => {
-                        const count = Math.min(3, Math.max(1, contract.keySellingPoints.length));
-                        const cardW = (L - 48 - (count - 1) * 10) / count;
-                        const hasOverflow =
-                          ksp.title.length > OVERFLOW_THRESHOLDS.kspTitleMaxChars ||
-                          ksp.description.length > OVERFLOW_THRESHOLDS.kspDescriptionMaxChars;
-                        return (
-                          <g key={ksp.id} transform={`translate(${i * (cardW + 10)}, 0)`}>
-                            <rect
-                              x={0}
-                              y={0}
-                              width={cardW}
-                              height={74}
-                              fill="#05050A"
-                              stroke={
-                                hasOverflow
-                                  ? '#EF4444'
-                                  : ksp.status === 'READY'
-                                  ? '#00E5FF'
-                                  : '#5322FF'
-                              }
-                              strokeWidth={hasOverflow ? 2 : 1.2}
-                            />
-                            <text
-                              x={12}
-                              y={26}
-                              fill={hasOverflow ? '#EF4444' : '#00E5FF'}
-                              fontSize="13"
-                              fontWeight="700"
-                              fontFamily="Plus Jakarta Sans, sans-serif"
-                            >
-                              {ksp.title}
-                            </text>
-                            <text
-                              x={12}
-                              y={46}
-                              fill="#FFFFFF"
-                              fontSize="11"
-                              fontFamily="Plus Jakarta Sans, sans-serif"
-                            >
-                              {ksp.description}
-                            </text>
-                            <text
-                              x={12}
-                              y={64}
-                              fill={
-                                hasOverflow
-                                  ? '#EF4444'
-                                  : ksp.status === 'READY'
-                                  ? '#10B981'
-                                  : '#5322FF'
-                              }
-                              fontSize="9"
-                              fontFamily="JetBrains Mono, monospace"
-                            >
-                              [
-                              {hasOverflow
-                                ? 'OVERFLOW_WARN'
-                                : ksp.status === 'READY'
-                                ? 'VERIFIED_VECTOR'
-                                : 'PENDING_AN'}
-                              ]
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </g>
-                  </g>
-
-                  {/* PANEL 3 (RIGHT SIDE PANEL - WIDTH W) */}
-                  <g transform={`translate(${xPanel3}, ${originY})`}>
-                    <rect x={16} y={20} width={W - 32} height={44} fill="#05050A" stroke="#2D2D44" />
-                    <text
-                      x={28}
-                      y={46}
-                      fill="#FFFFFF"
-                      fontSize="16"
-                      fontWeight="700"
-                      fontFamily="JetBrains Mono, monospace"
-                    >
-                      [ TECH_SPEC_TABLE ]
-                    </text>
-
-                    <g transform="translate(16, 80)">
-                      {[
-                        ...contract.technicalSpecs.filter((s) => s.id !== 'barcode'),
-                        ...contract.dynamicSpecs,
-                      ]
-                        .slice(0, 7)
-                        .map((spec, idx) => {
-                          const isSpecOverflow =
-                            spec.value.length > OVERFLOW_THRESHOLDS.specValueMaxChars ||
-                            spec.label.length > OVERFLOW_THRESHOLDS.specLabelMaxChars;
-                          return (
-                            <g key={spec.id} transform={`translate(0, ${idx * 34})`}>
-                              <rect
-                                x={0}
-                                y={0}
-                                width={W - 32}
-                                height={28}
-                                fill={idx % 2 === 0 ? '#05050A' : '#0D0E17'}
-                                stroke={isSpecOverflow ? '#EF4444' : '#1F1F2E'}
-                              />
-                              <text
-                                x={10}
-                                y={18}
-                                fill="#8A8FA3"
-                                fontSize="11"
-                                fontFamily="Plus Jakarta Sans, sans-serif"
-                              >
-                                {spec.label}
-                              </text>
-                              <text
-                                x={W - 42}
-                                y={18}
-                                textAnchor="end"
-                                fill={isSpecOverflow ? '#EF4444' : '#FFFFFF'}
-                                fontSize="12"
-                                fontWeight="600"
-                                fontFamily="JetBrains Mono, monospace"
-                              >
-                                {spec.value}
-                              </text>
-                            </g>
-                          );
-                        })}
-                    </g>
-
-                    {renderSvgBarcode(26, H - 90, Math.min(220, W - 52), 48)}
-                  </g>
-
-                  {/* PANEL 4 (BACK PANEL - LENGTH L) */}
-                  <g transform={`translate(${xPanel4}, ${originY})`}>
-                    <rect
-                      x={20}
-                      y={20}
-                      width={L - 40}
-                      height={H - 40}
-                      fill="#05050A"
-                      stroke="#1F1F2E"
-                      strokeWidth={1.2}
-                    />
-                    <text
-                      x={36}
-                      y={52}
-                      fill="#00E5FF"
-                      fontSize="20"
-                      fontWeight="700"
-                      fontFamily="Plus Jakarta Sans, sans-serif"
-                    >
-                      {contract.product.brand.toUpperCase()} // {contract.product.model}
-                    </text>
-                    <text
-                      x={36}
-                      y={76}
-                      fill="#8A8FA3"
-                      fontSize="13"
-                      fontFamily="Plus Jakarta Sans, sans-serif"
-                    >
-                      {contract.product.category} — {baseSubstrateSpec.shortCode}
-                    </text>
-
-                    <line x1={36} y1={94} x2={L - 36} y2={94} stroke="#1F1F2E" />
-
-                    <g transform="translate(36, 114)">
-                      <text
-                        x={0}
-                        y={0}
+                        x={svgW - padX}
+                        y={Math.round(32 * uiScale)}
+                        textAnchor="end"
                         fill="#00E5FF"
-                        fontSize="12"
+                        fontSize={fsSmall}
                         fontFamily="JetBrains Mono, monospace"
                       >
-                        [ 01 // ELECTRICAL_&_THERMAL_RATINGS ]
+                        {contract.product.model} // {flatCal.structureCode} // SHEET: {totalFlatWidthMm} × {totalFlatHeightMm} MM
                       </text>
-                      <text
-                        x={0}
-                        y={24}
-                        fill="#FFFFFF"
-                        fontSize="13"
-                        fontFamily="JetBrains Mono, monospace"
-                      >
-                        • MODEL: {contract.product.model} ({contract.product.artworkType})
-                      </text>
-                      <text
-                        x={0}
-                        y={46}
-                        fill="#FFFFFF"
-                        fontSize="13"
-                        fontFamily="JetBrains Mono, monospace"
-                      >
-                        • RATED VOLTAGE: {voltageVal} | POWER: {powerVal}
-                      </text>
-                      <text
-                        x={0}
-                        y={68}
-                        fill="#FFFFFF"
-                        fontSize="13"
-                        fontFamily="JetBrains Mono, monospace"
-                      >
-                        • CAPACITY: {capacityVal} | NET BOX: {L}×{W}×{H} MM
-                      </text>
-                      {contract.dynamicSpecs.slice(0, 3).map((ds, i) => (
-                        <text
-                          key={ds.id}
-                          x={0}
-                          y={90 + i * 22}
-                          fill="#8A8FA3"
-                          fontSize="12"
-                          fontFamily="JetBrains Mono, monospace"
-                        >
-                          • {ds.label.toUpperCase()}: {ds.value}
-                        </text>
+
+                      {[
+                        { cx: Math.round(42 * uiScale), cy: Math.round(42 * uiScale) },
+                        { cx: svgW - Math.round(42 * uiScale), cy: Math.round(42 * uiScale) },
+                        { cx: Math.round(42 * uiScale), cy: svgH - Math.round(42 * uiScale) },
+                        { cx: svgW - Math.round(42 * uiScale), cy: svgH - Math.round(42 * uiScale) },
+                      ].map((pt, idx) => (
+                        <g key={idx} transform={`translate(${pt.cx}, ${pt.cy})`}>
+                          <circle
+                            cx={0}
+                            cy={0}
+                            r={13 * uiScale}
+                            fill="none"
+                            stroke="#00E5FF"
+                            strokeWidth={1.2 * uiScale}
+                          />
+                          <circle
+                            cx={0}
+                            cy={0}
+                            r={5.5 * uiScale}
+                            fill="none"
+                            stroke="#EF4444"
+                            strokeWidth={1.2 * uiScale}
+                          />
+                          <line
+                            x1={-20 * uiScale}
+                            y1={0}
+                            x2={20 * uiScale}
+                            y2={0}
+                            stroke="#00E5FF"
+                            strokeWidth={1 * uiScale}
+                          />
+                          <line
+                            x1={0}
+                            y1={-20 * uiScale}
+                            x2={0}
+                            y2={20 * uiScale}
+                            stroke="#00E5FF"
+                            strokeWidth={1 * uiScale}
+                          />
+                        </g>
                       ))}
                     </g>
 
-                    <g transform={`translate(36, ${H - 106})`}>
-                      <rect
-                        x={0}
-                        y={0}
-                        width={46}
-                        height={46}
-                        fill="none"
-                        stroke="#8A8FA3"
-                        strokeWidth={1.5}
-                      />
-                      <text
-                        x={23}
-                        y={29}
-                        textAnchor="middle"
-                        fill="#FFFFFF"
-                        fontSize="16"
-                        fontWeight="700"
-                        fontFamily="JetBrains Mono, monospace"
-                      >
-                        CE
-                      </text>
-                      <rect
-                        x={56}
-                        y={0}
-                        width={46}
-                        height={46}
-                        fill="none"
-                        stroke="#8A8FA3"
-                        strokeWidth={1.5}
-                      />
-                      <rect
-                        x={66}
-                        y={10}
-                        width={26}
-                        height={26}
-                        fill="none"
-                        stroke="#8A8FA3"
-                        strokeWidth={1.5}
-                      />
-                    </g>
+                    {isScbGiftBox ? (
+                      /* ==========================================================
+                         MODE A: AUTHENTIC SCB-6119 GIFT BOX (HANDLE + 1-2-3 SNAP)
+                         4 Body Panels: 230 x 330 mm | Sheet ~935 x 540 mm
+                         ========================================================== */
+                      <>
+                        {/* 1. SUBSTRATE BASE & CROPPED AUTHENTIC GIFT BOX ARTWORK */}
+                        <g>
+                          <rect
+                            x={xPanel1 - B}
+                            y={yTopCut - B}
+                            width={physicalCutWidthMm + B * 2}
+                            height={physicalCutHeightMm + B * 2}
+                            fill={flatCal.substrateFillHex}
+                          />
+                          {layers.artwork && flatCal.flatArtworkUrl && flatCal.artworkRectMm && (
+                            <image
+                              href={flatCal.flatArtworkUrl}
+                              x={xPanel1 + flatCal.artworkRectMm.x}
+                              y={originY + flatCal.artworkRectMm.y}
+                              width={flatCal.artworkRectMm.width}
+                              height={flatCal.artworkRectMm.height}
+                              preserveAspectRatio="xMidYMid meet"
+                            />
+                          )}
+                        </g>
 
-                    {renderSvgBarcode(L - 225, H - 102, 185, 48)}
-                  </g>
+                        {/* 2. BLEED PERIMETER (+3.0MM) */}
+                        {layers.bleed && B > 0 && (
+                          <g>
+                            <rect
+                              x={xPanel1 - B}
+                              y={yTopCut - B}
+                              width={physicalCutWidthMm + B * 2}
+                              height={physicalCutHeightMm + B * 2}
+                              fill="none"
+                              stroke="#6B7280"
+                              strokeWidth={1.8}
+                              strokeDasharray="6 5"
+                            />
+                            <text
+                              x={xPanel1 - B + 4}
+                              y={yBotCut + B + 18}
+                              fill="#8A8FA3"
+                              fontSize={fsSmall}
+                              fontFamily="JetBrains Mono, monospace"
+                            >
+                              BLEED // +{B.toFixed(1)}MM
+                            </text>
+                          </g>
+                        )}
 
-                  {/* TOP LID ARTWORK */}
-                  <g transform={`translate(${xPanel2}, ${originY - topTuckH})`}>
-                    <text
-                      x={L / 2}
-                      y={topTuckH / 2}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="#00E5FF"
-                      fontSize="22"
-                      fontWeight="700"
-                      fontFamily="Plus Jakarta Sans, sans-serif"
-                      letterSpacing="2"
-                    >
-                      {contract.product.brand.toUpperCase()} // {contract.product.model}
-                    </text>
-                  </g>
-                </g>
-              )}
+                        {/* 3. CREASE / FOLD LINES (Lossless SCB-6119 Gift Box Vector Creases) */}
+                        {layers.crease && (
+                          <g>
+                            <g
+                              transform={`translate(${xPanel1}, ${originY})`}
+                              stroke="#00E5FF"
+                              strokeWidth={strokeCrease}
+                              fill="none"
+                            >
+                              <path d={SCB6119_GIFTBOX_CREASE_PATH_MM} />
+                            </g>
+                            <g
+                              stroke="#00E5FF"
+                              strokeWidth={1.3}
+                              strokeDasharray="8 6"
+                              strokeOpacity={0.75}
+                              fill="none"
+                            >
+                              <line x1={xPanel1} y1={originY} x2={xRightEdge} y2={originY} />
+                              <line x1={xPanel1} y1={yBodyBot} x2={xRightEdge} y2={yBodyBot} />
+                              <line x1={xPanel2} y1={originY} x2={xPanel2} y2={yBodyBot} />
+                              <line x1={xPanel3} y1={originY} x2={xPanel3} y2={yBodyBot} />
+                              <line x1={xPanel4} y1={originY} x2={xPanel4} y2={yBodyBot} />
+                              <line x1={xRightEdge} y1={originY} x2={xRightEdge} y2={yBodyBot} />
+                            </g>
+                          </g>
+                        )}
 
-              {/* 3. BLEED PERIMETER LINE */}
-              {layers.bleed && B > 0 && (
-                <g>
-                  <rect
-                    x={xGlue - B}
-                    y={originY - topTuckH - tuckTongueH - B}
-                    width={totalFlatWidthMm}
-                    height={totalFlatHeightMm}
-                    fill="none"
-                    stroke="#6B7280"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                  />
-                  <text
-                    x={xGlue - B + 8}
-                    y={originY - topTuckH - tuckTongueH - B - 8}
-                    fill="#8A8FA3"
-                    fontSize="11"
-                    fontFamily="JetBrains Mono, monospace"
-                  >
-                    BLEED_PERIMETER_OFFSET // +{B.toFixed(1)}MM
-                  </text>
-                </g>
-              )}
+                        {/* 4. DIECUT CUTTING LINES (Lossless SCB-6119 Handle & 1-2-3 Snap Cut Paths) */}
+                        {layers.diecut && (
+                          <g
+                            transform={`translate(${xPanel1}, ${originY})`}
+                            stroke="#EF4444"
+                            strokeWidth={strokeCut}
+                            fill="none"
+                          >
+                            <path d={SCB6119_GIFTBOX_CUT_PATH_MM} />
+                          </g>
+                        )}
 
-              {/* 4. CREASE / FOLD LINES */}
-              {layers.crease && (
-                <g stroke="#00E5FF" strokeWidth={2.2} strokeDasharray="10 6" fill="none">
-                  <line x1={xPanel1} y1={originY} x2={xRightEdge} y2={originY} />
-                  <line x1={xPanel1} y1={originY + H} x2={xRightEdge} y2={originY + H} />
-                  <line x1={xPanel1} y1={originY} x2={xPanel1} y2={originY + H} />
-                  <line x1={xPanel2} y1={originY} x2={xPanel2} y2={originY + H} />
-                  <line x1={xPanel3} y1={originY} x2={xPanel3} y2={originY + H} />
-                  <line x1={xPanel4} y1={originY} x2={xPanel4} y2={originY + H} />
-                  <line
-                    x1={xPanel2}
-                    y1={originY - topTuckH}
-                    x2={xPanel3}
-                    y2={originY - topTuckH}
-                  />
-                </g>
-              )}
+                        {/* 5. CALIBRATED MILLIMETER DIMENSION CALLOUTS */}
+                        {layers.dimensions && (
+                          <g fontFamily="JetBrains Mono, monospace" fontSize={fsMed} fill="#00E5FF">
+                            {[
+                              { x0: xPanel1, x1: xPanel2, label: `${pw1} MM` },
+                              { x0: xPanel2, x1: xPanel3, label: `${pw2} MM` },
+                              { x0: xPanel3, x1: xPanel4, label: `${pw3} MM` },
+                              { x0: xPanel4, x1: xRightEdge, label: `${pw4} MM` },
+                            ].map((seg, i) => (
+                              <g key={i}>
+                                <line
+                                  x1={seg.x0}
+                                  y1={yTopCut - 26}
+                                  x2={seg.x0}
+                                  y2={yTopCut - 10}
+                                  stroke="#00E5FF"
+                                  strokeOpacity={0.5}
+                                  strokeWidth={1}
+                                />
+                                <line
+                                  x1={seg.x0 + 5}
+                                  y1={yTopCut - 18}
+                                  x2={seg.x1 - 5}
+                                  y2={yTopCut - 18}
+                                  stroke="#00E5FF"
+                                  strokeWidth={strokeDim}
+                                  markerStart="url(#dimArrowStart)"
+                                  markerEnd="url(#dimArrowEnd)"
+                                />
+                                <text
+                                  x={(seg.x0 + seg.x1) / 2}
+                                  y={yTopCut - 26}
+                                  textAnchor="middle"
+                                  fontWeight="600"
+                                >
+                                  {seg.label}
+                                </text>
+                              </g>
+                            ))}
 
-              {/* 5. DIECUT CUTTING LINES */}
-              {layers.diecut && (
-                <g stroke="#EF4444" strokeWidth={2.5} fill="none">
-                  <polyline
-                    points={`
-                      ${xPanel1},${originY}
-                      ${xGlue},${originY + 25}
-                      ${xGlue},${originY + H - 25}
-                      ${xPanel1},${originY + H}
-                    `}
-                  />
-                  <line x1={xRightEdge} y1={originY} x2={xRightEdge} y2={originY + H} />
-                  <polyline
-                    points={`
-                      ${xPanel1},${originY}
-                      ${xPanel1 + 18},${originY - dustFlapH}
-                      ${xPanel2 - 18},${originY - dustFlapH}
-                      ${xPanel2},${originY}
-                    `}
-                  />
-                  <polyline
-                    points={`
-                      ${xPanel2},${originY}
-                      ${xPanel2},${originY - topTuckH}
-                      ${xPanel2 + 24},${originY - topTuckH}
-                      ${xPanel2 + 48},${originY - topTuckH - tuckTongueH}
-                      ${xPanel3 - 48},${originY - topTuckH - tuckTongueH}
-                      ${xPanel3 - 24},${originY - topTuckH}
-                      ${xPanel3},${originY - topTuckH}
-                      ${xPanel3},${originY}
-                    `}
-                  />
-                  <polyline
-                    points={`
-                      ${xPanel3},${originY}
-                      ${xPanel3 + 18},${originY - dustFlapH}
-                      ${xPanel4 - 18},${originY - dustFlapH}
-                      ${xPanel4},${originY}
-                    `}
-                  />
-                  <line x1={xPanel4} y1={originY} x2={xRightEdge} y2={originY} />
-                  <polyline
-                    points={`
-                      ${xPanel1},${originY + H}
-                      ${xPanel1 + 12},${originY + H + bottomFlapH * 0.8}
-                      ${xPanel2 - 12},${originY + H + bottomFlapH * 0.8}
-                      ${xPanel2},${originY + H}
-                    `}
-                  />
-                  <polyline
-                    points={`
-                      ${xPanel2},${originY + H}
-                      ${xPanel2},${originY + H + bottomFlapH}
-                      ${xPanel3},${originY + H + bottomFlapH}
-                      ${xPanel3},${originY + H}
-                    `}
-                  />
-                  <polyline
-                    points={`
-                      ${xPanel3},${originY + H}
-                      ${xPanel3 + 12},${originY + H + bottomFlapH * 0.8}
-                      ${xPanel4 - 12},${originY + H + bottomFlapH * 0.8}
-                      ${xPanel4},${originY + H}
-                    `}
-                  />
-                  <polyline
-                    points={`
-                      ${xPanel4},${originY + H}
-                      ${xPanel4},${originY + H + bottomFlapH}
-                      ${xRightEdge},${originY + H + bottomFlapH}
-                      ${xRightEdge},${originY + H}
-                    `}
-                  />
-                </g>
-              )}
+                            <text
+                              x={(xRightEdge + xOuterRightCut) / 2 + 12}
+                              y={originY - 10}
+                              textAnchor="middle"
+                              fontSize={fsSmall}
+                              fill="#10B981"
+                            >
+                              +GLUE
+                            </text>
 
-              {/* 6. CAD DIMENSION CALLOUT ARROWS */}
-              {layers.dimensions && (
-                <g fontFamily="JetBrains Mono, monospace" fontSize="13" fill="#00E5FF">
-                  <line
-                    x1={xPanel1 + 6}
-                    y1={originY - 18}
-                    x2={xPanel2 - 6}
-                    y2={originY - 18}
-                    stroke="#00E5FF"
-                    strokeWidth={1.5}
-                    markerStart="url(#dimArrowStart)"
-                    markerEnd="url(#dimArrowEnd)"
-                  />
-                  <text x={xPanel1 + W / 2} y={originY - 26} textAnchor="middle">
-                    W: {W}MM
-                  </text>
+                            {/* Left Body Height Callout (330 MM) */}
+                            <line
+                              x1={xPanel1 - 38}
+                              y1={originY}
+                              x2={xPanel1 - 12}
+                              y2={originY}
+                              stroke="#00E5FF"
+                              strokeOpacity={0.5}
+                              strokeWidth={1}
+                            />
+                            <line
+                              x1={xPanel1 - 38}
+                              y1={yBodyBot}
+                              x2={xPanel1 - 12}
+                              y2={yBodyBot}
+                              stroke="#00E5FF"
+                              strokeOpacity={0.5}
+                              strokeWidth={1}
+                            />
+                            <line
+                              x1={xPanel1 - 28}
+                              y1={originY + 5}
+                              x2={xPanel1 - 28}
+                              y2={yBodyBot - 5}
+                              stroke="#00E5FF"
+                              strokeWidth={strokeDim}
+                              markerStart="url(#dimArrowStart)"
+                              markerEnd="url(#dimArrowEnd)"
+                            />
+                            <text
+                              x={xPanel1 - 44}
+                              y={originY + H / 2}
+                              dominantBaseline="middle"
+                              transform={`rotate(-90, ${xPanel1 - 44}, ${originY + H / 2})`}
+                              textAnchor="middle"
+                              fontWeight="700"
+                            >
+                              BODY H: {H} MM
+                            </text>
 
-                  <line
-                    x1={xPanel2 + 6}
-                    y1={originY - 18}
-                    x2={xPanel3 - 6}
-                    y2={originY - 18}
-                    stroke="#00E5FF"
-                    strokeWidth={1.5}
-                    markerStart="url(#dimArrowStart)"
-                    markerEnd="url(#dimArrowEnd)"
-                  />
-                  <text x={xPanel2 + L / 2} y={originY - 26} textAnchor="middle">
-                    L: {L}MM
-                  </text>
+                            {/* Right Structural Zone Callout */}
+                            <line
+                              x1={xOuterRightCut + 28}
+                              y1={yTopCut + 5}
+                              x2={xOuterRightCut + 28}
+                              y2={yBotCut - 5}
+                              stroke="#00E5FF"
+                              strokeWidth={strokeDim}
+                              markerStart="url(#dimArrowStart)"
+                              markerEnd="url(#dimArrowEnd)"
+                            />
+                            <text
+                              x={xOuterRightCut + 46}
+                              y={(yTopCut + yBotCut) / 2}
+                              dominantBaseline="middle"
+                              transform={`rotate(90, ${xOuterRightCut + 46}, ${(yTopCut + yBotCut) / 2})`}
+                              textAnchor="middle"
+                              fontSize={fsSmall}
+                            >
+                              FLAT H: ~{totalFlatHeightMm} MM (HANDLE + 330 BODY + 1-2-3 SNAP)
+                            </text>
 
-                  <line
-                    x1={xPanel3 + 6}
-                    y1={originY - 18}
-                    x2={xPanel4 - 6}
-                    y2={originY - 18}
-                    stroke="#00E5FF"
-                    strokeWidth={1.5}
-                    markerStart="url(#dimArrowStart)"
-                    markerEnd="url(#dimArrowEnd)"
-                  />
-                  <text x={xPanel3 + W / 2} y={originY - 26} textAnchor="middle">
-                    W: {W}MM
-                  </text>
+                            {/* Bottom Overall Flat Sheet Width Callout */}
+                            <line
+                              x1={xPanel1 + 6}
+                              y1={yBotCut + 34}
+                              x2={xOuterRightCut - 6}
+                              y2={yBotCut + 34}
+                              stroke="#00E5FF"
+                              strokeWidth={strokeDim}
+                              markerStart="url(#dimArrowStart)"
+                              markerEnd="url(#dimArrowEnd)"
+                            />
+                            <text
+                              x={(xPanel1 + xOuterRightCut) / 2}
+                              y={yBotCut + 56}
+                              textAnchor="middle"
+                              fontSize={fsLarge}
+                              fontWeight="700"
+                            >
+                              FLAT SHEET WIDTH: ~{totalFlatWidthMm} MM (4 × 230 MM + GLUE FLAP)
+                            </text>
+                          </g>
+                        )}
+                      </>
+                    ) : isScbCartonBox ? (
+                      /* ==========================================================
+                         MODE B: AUTHENTIC SCB-6119 MASTER CARTON (FEFCO 0201 RSC)
+                         4 Panels: 485 x 365 mm | Flaps: 242.5 mm | Sheet: 1980 x 850 mm
+                         ========================================================== */
+                      <>
+                        {/* 1. 5-LAYER KRAFT SUBSTRATE, GLUE TAB & AUTHENTIC RSC ARTWORK */}
+                        <g>
+                          {/* Left Tapered 40mm RSC Manufacturer's Joint Glue Tab */}
+                          <polygon
+                            points={`
+                              ${xGlue},${originY + 24}
+                              ${xPanel1},${originY}
+                              ${xPanel1},${yBodyBot}
+                              ${xGlue},${yBodyBot - 24}
+                            `}
+                            fill={flatCal.substrateFillHex}
+                          />
+                          <polygon
+                            points={`
+                              ${xGlue},${originY + 24}
+                              ${xPanel1},${originY}
+                              ${xPanel1},${yBodyBot}
+                              ${xGlue},${yBodyBot - 24}
+                            `}
+                            fill="url(#glueHatch)"
+                            opacity={0.35}
+                          />
+                          <text
+                            x={xGlue + glueFlap / 2}
+                            y={originY + H / 2}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            transform={`rotate(-90, ${xGlue + glueFlap / 2}, ${originY + H / 2})`}
+                            fill="#1E3A8A"
+                            fontSize={13}
+                            fontWeight="700"
+                            fontFamily="JetBrains Mono, monospace"
+                            letterSpacing="2"
+                          >
+                            RSC GLUE TAB ({glueFlap}MM)
+                          </text>
 
-                  <line
-                    x1={xPanel4 + 6}
-                    y1={originY - 18}
-                    x2={xRightEdge - 6}
-                    y2={originY - 18}
-                    stroke="#00E5FF"
-                    strokeWidth={1.5}
-                    markerStart="url(#dimArrowStart)"
-                    markerEnd="url(#dimArrowEnd)"
-                  />
-                  <text x={xPanel4 + L / 2} y={originY - 26} textAnchor="middle">
-                    L: {L}MM
-                  </text>
+                          {/* Bare 5-layer Kraft Backing for 4 Panels + 8 Flaps (visible when artwork layer toggled off) */}
+                          <rect
+                            x={xPanel1}
+                            y={originY}
+                            width={bodySpanWidthMm}
+                            height={H}
+                            fill={flatCal.substrateFillHex}
+                          />
+                          {[
+                            { x0: xPanel1, x1: xPanel2 - slotHalf },
+                            { x0: xPanel2 + slotHalf, x1: xPanel3 - slotHalf },
+                            { x0: xPanel3 + slotHalf, x1: xPanel4 - slotHalf },
+                            { x0: xPanel4 + slotHalf, x1: xRightEdge },
+                          ].map((flap, idx) => (
+                            <g key={idx}>
+                              <rect
+                                x={flap.x0}
+                                y={yTopCut}
+                                width={flap.x1 - flap.x0}
+                                height={topSpanMm}
+                                fill={flatCal.substrateFillHex}
+                              />
+                              <rect
+                                x={flap.x0}
+                                y={yBodyBot}
+                                width={flap.x1 - flap.x0}
+                                height={botSpanMm}
+                                fill={flatCal.substrateFillHex}
+                              />
+                            </g>
+                          ))}
 
-                  <line
-                    x1={xRightEdge + 32}
-                    y1={originY + 6}
-                    x2={xRightEdge + 32}
-                    y2={originY + H - 6}
-                    stroke="#00E5FF"
-                    strokeWidth={1.5}
-                    markerStart="url(#dimArrowStart)"
-                    markerEnd="url(#dimArrowEnd)"
-                  />
-                  <text
-                    x={xRightEdge + 48}
-                    y={originY + H / 2}
-                    dominantBaseline="middle"
-                    transform={`rotate(90, ${xRightEdge + 48}, ${originY + H / 2})`}
-                    textAnchor="middle"
-                  >
-                    H: {H}MM
-                  </text>
-                </g>
-              )}
+                          {/* Genuine Cropped Carton_box_SCB-6119 Artwork (Shipping Marks + Icons) */}
+                          {layers.artwork && flatCal.flatArtworkUrl && flatCal.artworkRectMm && (
+                            <image
+                              href={flatCal.flatArtworkUrl}
+                              x={xPanel1 + flatCal.artworkRectMm.x}
+                              y={originY + flatCal.artworkRectMm.y}
+                              width={flatCal.artworkRectMm.width}
+                              height={flatCal.artworkRectMm.height}
+                              preserveAspectRatio="xMidYMid meet"
+                            />
+                          )}
+                        </g>
+
+                        {/* 2. BLEED PERIMETER (+3.0MM) */}
+                        {layers.bleed && B > 0 && (
+                          <g>
+                            <rect
+                              x={leftCutX - B}
+                              y={yTopCut - B}
+                              width={physicalCutWidthMm + B * 2}
+                              height={physicalCutHeightMm + B * 2}
+                              fill="none"
+                              stroke="#6B7280"
+                              strokeWidth={2.4}
+                              strokeDasharray="8 6"
+                            />
+                            <text
+                              x={leftCutX - B + 6}
+                              y={yBotCut + B + 24}
+                              fill="#8A8FA3"
+                              fontSize={fsSmall}
+                              fontFamily="JetBrains Mono, monospace"
+                            >
+                              BLEED // +{B.toFixed(1)}MM
+                            </text>
+                          </g>
+                        )}
+
+                        {/* 3. FEFCO 0201 RSC CREASE / SCORE LINES */}
+                        {layers.crease && (
+                          <g
+                            stroke="#00E5FF"
+                            strokeWidth={strokeCrease}
+                            strokeDasharray="14 8"
+                            fill="none"
+                          >
+                            <line x1={xPanel1} y1={originY} x2={xRightEdge} y2={originY} />
+                            <line x1={xPanel1} y1={yBodyBot} x2={xRightEdge} y2={yBodyBot} />
+                            <line x1={xPanel1} y1={originY} x2={xPanel1} y2={yBodyBot} />
+                            <line x1={xPanel2} y1={originY} x2={xPanel2} y2={yBodyBot} />
+                            <line x1={xPanel3} y1={originY} x2={xPanel3} y2={yBodyBot} />
+                            <line x1={xPanel4} y1={originY} x2={xPanel4} y2={yBodyBot} />
+                          </g>
+                        )}
+
+                        {/* 4. FEFCO 0201 RSC DIECUT & FLAP SLOTS */}
+                        {layers.diecut && (
+                          <g stroke="#EF4444" strokeWidth={strokeCut} fill="none">
+                            {/* Left Tapered Glue Tab */}
+                            <polyline
+                              points={`
+                                ${xPanel1},${originY}
+                                ${xGlue},${originY + 24}
+                                ${xGlue},${yBodyBot - 24}
+                                ${xPanel1},${yBodyBot}
+                              `}
+                            />
+                            {/* Top 4 Slotted RSC Flaps */}
+                            <polyline
+                              points={`
+                                ${xPanel1},${originY}
+                                ${xPanel1},${yTopCut}
+                                ${xPanel2 - slotHalf},${yTopCut}
+                                ${xPanel2 - slotHalf},${originY}
+                                ${xPanel2 + slotHalf},${originY}
+                                ${xPanel2 + slotHalf},${yTopCut}
+                                ${xPanel3 - slotHalf},${yTopCut}
+                                ${xPanel3 - slotHalf},${originY}
+                                ${xPanel3 + slotHalf},${originY}
+                                ${xPanel3 + slotHalf},${yTopCut}
+                                ${xPanel4 - slotHalf},${yTopCut}
+                                ${xPanel4 - slotHalf},${originY}
+                                ${xPanel4 + slotHalf},${originY}
+                                ${xPanel4 + slotHalf},${yTopCut}
+                                ${xRightEdge},${yTopCut}
+                                ${xRightEdge},${yBotCut}
+                              `}
+                            />
+                            {/* Bottom 4 Slotted RSC Flaps */}
+                            <polyline
+                              points={`
+                                ${xPanel1},${yBodyBot}
+                                ${xPanel1},${yBotCut}
+                                ${xPanel2 - slotHalf},${yBotCut}
+                                ${xPanel2 - slotHalf},${yBodyBot}
+                                ${xPanel2 + slotHalf},${yBodyBot}
+                                ${xPanel2 + slotHalf},${yBotCut}
+                                ${xPanel3 - slotHalf},${yBotCut}
+                                ${xPanel3 - slotHalf},${yBodyBot}
+                                ${xPanel3 + slotHalf},${yBodyBot}
+                                ${xPanel3 + slotHalf},${yBotCut}
+                                ${xPanel4 - slotHalf},${yBotCut}
+                                ${xPanel4 - slotHalf},${yBodyBot}
+                                ${xPanel4 + slotHalf},${yBodyBot}
+                                ${xPanel4 + slotHalf},${yBotCut}
+                                ${xRightEdge},${yBotCut}
+                              `}
+                            />
+                          </g>
+                        )}
+
+                        {/* 5. CALIBRATED RSC MILLIMETER DIMENSION CALLOUTS */}
+                        {layers.dimensions && (
+                          <g fontFamily="JetBrains Mono, monospace" fontSize={fsMed} fill="#00E5FF">
+                            {/* Glue Tab + 4 x 485mm Panel Callouts */}
+                            <text
+                              x={xGlue + glueFlap / 2}
+                              y={originY - 14}
+                              textAnchor="middle"
+                              fontSize={fsSmall}
+                              fill="#10B981"
+                            >
+                              {glueFlap}MM
+                            </text>
+                            {[
+                              { x0: xPanel1, x1: xPanel2, label: `${pw1} MM` },
+                              { x0: xPanel2, x1: xPanel3, label: `${pw2} MM` },
+                              { x0: xPanel3, x1: xPanel4, label: `${pw3} MM` },
+                              { x0: xPanel4, x1: xRightEdge, label: `${pw4} MM` },
+                            ].map((seg, i) => (
+                              <g key={i}>
+                                <line
+                                  x1={seg.x0}
+                                  y1={yTopCut - 42}
+                                  x2={seg.x0}
+                                  y2={yTopCut - 14}
+                                  stroke="#00E5FF"
+                                  strokeOpacity={0.5}
+                                  strokeWidth={1.5}
+                                />
+                                <line
+                                  x1={seg.x0 + 8}
+                                  y1={yTopCut - 28}
+                                  x2={seg.x1 - 8}
+                                  y2={yTopCut - 28}
+                                  stroke="#00E5FF"
+                                  strokeWidth={strokeDim}
+                                  markerStart="url(#dimArrowStart)"
+                                  markerEnd="url(#dimArrowEnd)"
+                                />
+                                <text
+                                  x={(seg.x0 + seg.x1) / 2}
+                                  y={yTopCut - 40}
+                                  textAnchor="middle"
+                                  fontWeight="700"
+                                >
+                                  {seg.label}
+                                </text>
+                              </g>
+                            ))}
+
+                            {/* Left Vertical Body Height (365 MM) & Total Height (850 MM) */}
+                            <line
+                              x1={leftCutX - 58}
+                              y1={yTopCut + 8}
+                              x2={leftCutX - 58}
+                              y2={yBotCut - 8}
+                              stroke="#00E5FF"
+                              strokeWidth={strokeDim}
+                              markerStart="url(#dimArrowStart)"
+                              markerEnd="url(#dimArrowEnd)"
+                            />
+                            <text
+                              x={leftCutX - 82}
+                              y={(yTopCut + yBotCut) / 2}
+                              dominantBaseline="middle"
+                              transform={`rotate(-90, ${leftCutX - 82}, ${(yTopCut + yBotCut) / 2})`}
+                              textAnchor="middle"
+                              fontSize={fsLarge}
+                              fontWeight="700"
+                            >
+                              TOTAL H: {totalFlatHeightMm} MM
+                            </text>
+
+                            {/* Right Vertical Breakdown: 242.5 MM Top Flap / 365 MM Body / 242.5 MM Bottom Flap */}
+                            {[
+                              { y0: yTopCut, y1: originY, label: `FLAP: ${topSpanMm} MM` },
+                              { y0: originY, y1: yBodyBot, label: `BODY: ${H} MM` },
+                              { y0: yBodyBot, y1: yBotCut, label: `FLAP: ${botSpanMm} MM` },
+                            ].map((vSeg, idx) => (
+                              <g key={idx}>
+                                <line
+                                  x1={xRightEdge + 12}
+                                  y1={vSeg.y0}
+                                  x2={xRightEdge + 54}
+                                  y2={vSeg.y0}
+                                  stroke="#00E5FF"
+                                  strokeOpacity={0.45}
+                                  strokeWidth={1.4}
+                                />
+                                <line
+                                  x1={xRightEdge + 42}
+                                  y1={vSeg.y0 + 7}
+                                  x2={xRightEdge + 42}
+                                  y2={vSeg.y1 - 7}
+                                  stroke="#00E5FF"
+                                  strokeWidth={strokeDim}
+                                  markerStart="url(#dimArrowStart)"
+                                  markerEnd="url(#dimArrowEnd)"
+                                />
+                                <text
+                                  x={xRightEdge + 68}
+                                  y={(vSeg.y0 + vSeg.y1) / 2}
+                                  dominantBaseline="middle"
+                                  transform={`rotate(90, ${xRightEdge + 68}, ${(vSeg.y0 + vSeg.y1) / 2})`}
+                                  textAnchor="middle"
+                                  fontWeight="600"
+                                >
+                                  {vSeg.label}
+                                </text>
+                              </g>
+                            ))}
+
+                            {/* Bottom Overall Flat Width Callout (1980 MM) */}
+                            <line
+                              x1={xGlue + 8}
+                              y1={yBotCut + 48}
+                              x2={xRightEdge - 8}
+                              y2={yBotCut + 48}
+                              stroke="#00E5FF"
+                              strokeWidth={strokeDim}
+                              markerStart="url(#dimArrowStart)"
+                              markerEnd="url(#dimArrowEnd)"
+                            />
+                            <text
+                              x={(xGlue + xRightEdge) / 2}
+                              y={yBotCut + 80}
+                              textAnchor="middle"
+                              fontSize={fsLarge}
+                              fontWeight="700"
+                            >
+                              TOTAL FLAT SHEET: {totalFlatWidthMm} × {totalFlatHeightMm} MM (4 × 485 MM + {glueFlap} MM GLUE TAB)
+                            </text>
+                          </g>
+                        )}
+                      </>
+                    ) : (
+                      /* ==========================================================
+                         MODE C: PARAMETRIC FALLBACK FOR OTHER CONTRACTS (ICB-6619, ETC.)
+                         ========================================================== */
+                      <>
+                        <g>
+                          <polygon
+                            points={`
+                              ${xGlue},${originY + 25}
+                              ${xPanel1},${originY}
+                              ${xPanel1},${originY + H}
+                              ${xGlue},${originY + H - 25}
+                            `}
+                            fill="url(#glueHatch)"
+                          />
+                          <rect
+                            x={xPanel1}
+                            y={originY}
+                            width={W + L + W + L}
+                            height={H}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <polygon
+                            points={`
+                              ${xPanel1},${originY}
+                              ${xPanel1 + 18},${originY - dustFlapH}
+                              ${xPanel2 - 18},${originY - dustFlapH}
+                              ${xPanel2},${originY}
+                            `}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <polygon
+                            points={`
+                              ${xPanel3},${originY}
+                              ${xPanel3 + 18},${originY - dustFlapH}
+                              ${xPanel4 - 18},${originY - dustFlapH}
+                              ${xPanel4},${originY}
+                            `}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <rect
+                            x={xPanel2}
+                            y={originY - topTuckH}
+                            width={L}
+                            height={topTuckH}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <polygon
+                            points={`
+                              ${xPanel2 + 24},${originY - topTuckH}
+                              ${xPanel2 + 48},${originY - topTuckH - tuckTongueH}
+                              ${xPanel3 - 48},${originY - topTuckH - tuckTongueH}
+                              ${xPanel3 - 24},${originY - topTuckH}
+                            `}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <rect
+                            x={xPanel1}
+                            y={originY + H}
+                            width={W}
+                            height={bottomFlapH * 0.8}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <rect
+                            x={xPanel2}
+                            y={originY + H}
+                            width={L}
+                            height={bottomFlapH}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <rect
+                            x={xPanel3}
+                            y={originY + H}
+                            width={W}
+                            height={bottomFlapH * 0.8}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                          <rect
+                            x={xPanel4}
+                            y={originY + H}
+                            width={L}
+                            height={bottomFlapH}
+                            fill={baseSubstrateSpec.surfaceTint2D}
+                          />
+                        </g>
+
+                        {layers.artwork && (
+                          <g>
+                            <g transform={`translate(${xPanel2}, ${originY})`}>
+                              <rect
+                                x={20}
+                                y={20}
+                                width={L - 40}
+                                height={H - 40}
+                                fill="#05050A"
+                                stroke={
+                                  contract.product.brand.length > OVERFLOW_THRESHOLDS.brandMaxChars ||
+                                  contract.product.model.length > OVERFLOW_THRESHOLDS.modelMaxChars
+                                    ? '#EF4444'
+                                    : '#00E5FF'
+                                }
+                                strokeWidth={1.5}
+                              />
+                              <text
+                                x={36}
+                                y={58}
+                                fill="#FFFFFF"
+                                fontSize="24"
+                                fontWeight="700"
+                                fontFamily="Plus Jakarta Sans, sans-serif"
+                              >
+                                {contract.product.brand} // {contract.product.model}
+                              </text>
+                              <text
+                                x={36}
+                                y={88}
+                                fill="#00E5FF"
+                                fontSize="14"
+                                fontFamily="Plus Jakarta Sans, sans-serif"
+                              >
+                                {contract.product.category}
+                              </text>
+                              <text
+                                x={36}
+                                y={120}
+                                fill="#8A8FA3"
+                                fontSize="12"
+                                fontFamily="JetBrains Mono, monospace"
+                              >
+                                {powerVal} // {capacityVal} // {voltageVal}
+                              </text>
+                            </g>
+                            <g transform={`translate(${xPanel3}, ${originY})`}>
+                              {renderSvgBarcode(20, H - 84, Math.min(200, Math.max(90, W - 40)), 44)}
+                            </g>
+                          </g>
+                        )}
+
+                        {layers.bleed && B > 0 && (
+                          <rect
+                            x={leftCutX - B}
+                            y={yTopCut - B}
+                            width={physicalCutWidthMm + B * 2}
+                            height={physicalCutHeightMm + B * 2}
+                            fill="none"
+                            stroke="#6B7280"
+                            strokeWidth={2}
+                            strokeDasharray="4 4"
+                          />
+                        )}
+
+                        {layers.crease && (
+                          <g stroke="#00E5FF" strokeWidth={2} strokeDasharray="10 6" fill="none">
+                            <line x1={xPanel1} y1={originY} x2={xRightEdge} y2={originY} />
+                            <line x1={xPanel1} y1={originY + H} x2={xRightEdge} y2={originY + H} />
+                            <line x1={xPanel1} y1={originY} x2={xPanel1} y2={originY + H} />
+                            <line x1={xPanel2} y1={originY} x2={xPanel2} y2={originY + H} />
+                            <line x1={xPanel3} y1={originY} x2={xPanel3} y2={originY + H} />
+                            <line x1={xPanel4} y1={originY} x2={xPanel4} y2={originY + H} />
+                          </g>
+                        )}
+
+                        {layers.diecut && (
+                          <rect
+                            x={xPanel1}
+                            y={originY}
+                            width={bodySpanWidthMm}
+                            height={H}
+                            fill="none"
+                            stroke="#EF4444"
+                            strokeWidth={2.2}
+                          />
+                        )}
+
+                        {layers.dimensions && (
+                          <g fontFamily="JetBrains Mono, monospace" fontSize="13" fill="#00E5FF">
+                            <text x={xPanel1 + W / 2} y={originY - 18} textAnchor="middle">
+                              W: {W}MM
+                            </text>
+                            <text x={xPanel2 + L / 2} y={originY - 18} textAnchor="middle">
+                              L: {L}MM
+                            </text>
+                            <text x={xRightEdge + 36} y={originY + H / 2} textAnchor="middle">
+                              H: {H}MM
+                            </text>
+                          </g>
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </svg>
           </div>
         ) : (
@@ -1904,6 +1814,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
           <DynamicBoxEngine
             lang={lang}
             contract={contract}
+            topologyConfig={activeTopologyConfig}
             activeSubstrate={activeSubstrate}
             customPbrPack={customPbrPack}
             foldPercent={foldPercent}
