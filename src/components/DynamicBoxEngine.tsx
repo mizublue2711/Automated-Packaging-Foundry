@@ -1238,41 +1238,24 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       className="w-full h-full relative select-none overflow-hidden cursor-grab active:cursor-grabbing"
     >
       {/* Visual Beacon for Active 3D Rig Verification */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          left: 10,
-          zIndex: 9999,
-          background: 'red',
-          color: 'white',
-          padding: 8,
-          fontSize: 18,
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}
-      >
-        AGENT_AN_RIG_ACTIVE: {rigVersion}
-      </div>
-
       {/* Top-Left Technical Telemetry Overlay (Zero backdrop-filter per Three.js WebGL spec) */}
-      <div className="absolute top-3 left-3 z-20 bg-[#0A0C14] border border-[#1F1F2E] px-2.5 py-1.5 font-mono text-[10px] text-[#8A8FA3] tabular-nums flex flex-wrap items-center gap-3 pointer-events-none">
-        <span className="flex items-center gap-1 text-[#00E5FF]">
-          <Compass size={14} strokeWidth={1.25} />
+      <div className="absolute top-3 left-3 z-20 bg-[#09090b]/95 border border-[#27272a] px-2.5 py-1.5 font-mono text-[10px] text-[#71717a] tabular-nums flex flex-wrap items-center gap-3 pointer-events-none">
+        <span className="flex items-center gap-1 text-zinc-300">
+          <Compass size={13} strokeWidth={1.5} className="text-[#71717a]" />
           AZIMUTH: {Math.round(cameraAzimuthDeg)}° | POLAR: {Math.round(cameraPolarDeg)}°
         </span>
-        <span className="text-[#00E5FF] font-bold">
+        <span className="text-white font-semibold">
           FOLD: {Math.round(resolvedFoldPercent)}%
         </span>
-        <span className="text-white">
+        <span className="text-zinc-300">
           DIST: {cameraDistanceMm}MM [{minDistanceMm}–{maxDistanceMm}MM]
         </span>
-        <span className="text-white hidden xl:inline">
+        <span className="text-zinc-400 hidden xl:inline">
           PBR: {baseSubstrateSpec.shortCode} | INNER:{' '}
           {activeTopology.interiorSubstrateHex || '#D1C7BD'}
         </span>
         {choreographyPhase !== 'IDLE' && (
-          <span className="px-1.5 py-0.5 bg-[#5322FF] border border-[#00E5FF] text-white font-semibold">
+          <span className="px-1.5 py-0.5 bg-[#5322ff] text-white font-semibold shadow-[0_0_12px_rgba(83,34,255,0.45)]">
             {choreographyPhase}
           </span>
         )}
@@ -1280,7 +1263,7 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
 
       {/* Top-Right Recording Indicator Badge */}
       {isRecordingWebm && (
-        <div className="absolute top-3 right-3 z-20 bg-[#05050A] border-2 border-[#EF4444] px-3 py-1.5 font-mono text-xs font-bold text-[#EF4444] tabular-nums flex items-center gap-2 pointer-events-none">
+        <div className="absolute top-3 right-3 z-20 bg-[#09090b] border border-[#EF4444] px-3 py-1.5 font-mono text-xs font-bold text-[#EF4444] tabular-nums flex items-center gap-2 pointer-events-none">
           <span className="inline-block w-2.5 h-2.5 bg-[#EF4444]" />
           <span>{fullT.showcase.recordingActiveBtn}</span>
         </div>
@@ -1290,12 +1273,12 @@ export const DynamicBoxEngine: React.FC<DynamicBoxEngineProps> = ({
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Bottom Telemetry Strip inside 3D Viewport */}
-      <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between px-3 py-1.5 bg-[#0A0C14] border border-[#1F1F2E] font-mono text-[10px] text-[#8A8FA3] pointer-events-none">
+      <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between px-3 py-1.5 bg-[#09090b]/95 border border-[#27272a] font-mono text-[10px] text-[#71717a] pointer-events-none">
         <span className="flex items-center gap-1.5">
-          <RotateCw size={14} strokeWidth={1.25} className="text-[#00E5FF]" />
+          <RotateCw size={13} strokeWidth={1.5} className="text-[#71717a]" />
           {t.dragOrbitHint} // WHEEL ZOOM: {minDistanceMm}MM – {maxDistanceMm}MM
         </span>
-        <span className="text-white tabular-nums">
+        <span className="text-zinc-300 tabular-nums">
           TOPOLOGY: {activeTopology.standardCode} (
           {activeTopology.panels.length} PANELS) // {t.foldedVolume}:{' '}
           {((L * W * H) / 1_000_000).toFixed(2)} L ({L}×{W}×{H}MM)

@@ -5,6 +5,16 @@
 
 import React, { useState } from 'react';
 import {
+  CheckCircle2,
+  ChevronRight,
+  FileSliders,
+  Layers,
+  ShieldAlert,
+  Sliders,
+  Sparkles,
+  Upload,
+} from 'lucide-react';
+import {
   AgentAnPbrTexturePack,
   ArtworkType,
   CadLayerId,
@@ -22,10 +32,12 @@ import {
   DEFAULT_AGENT_AN_PBR_PACK,
   DEFAULT_CAD_LAYERS,
   INITIAL_AGENT_CONTRACT,
+  PREFLIGHT_RULE_CONFIG,
   SCB6119_CARTON_CONTRACT,
   SCB6119_GIFTBOX_CONTRACT,
   SUBSTRATE_MATERIAL_CONFIG,
   computeFlatSheetCalibration,
+  countContractOverflows,
   evaluateEan13,
   selectVectorCraftSvg,
 } from './config/studioConfig';
@@ -68,8 +80,9 @@ export default function App() {
     useState<ProductionJobTicket | null>(null);
 
   // Collapsible Sidebar Docks & Full Canvas Focus Mode State
+  // Default: Left sidebar open (01.A compact, 01.B/01.C collapsed), Right preflight collapsed to pill
   const [isLeftDockCollapsed, setIsLeftDockCollapsed] = useState<boolean>(false);
-  const [isRightDockCollapsed, setIsRightDockCollapsed] = useState<boolean>(false);
+  const [isRightDockCollapsed, setIsRightDockCollapsed] = useState<boolean>(true);
 
   const handleToggleFullFocusMode = () => {
     const bothCollapsed = isLeftDockCollapsed && isRightDockCollapsed;
@@ -470,8 +483,25 @@ export default function App() {
     setLastGeneratedTicket(null);
   };
 
+  // Derive Preflight readiness for the collapsed right-edge pill badge
+  const barcodeSpec = contract.technicalSpecs.find((s) => s.id === 'barcode');
+  const eanCheck = evaluateEan13(barcodeSpec?.value || '');
+  const overflowCount = countContractOverflows(contract);
+  const allKspVectorReady = contract.keySellingPoints.every(
+    (k) => k.status === 'READY' && Boolean(k.iconSvg)
+  );
+  const preflightPassCount = PREFLIGHT_RULE_CONFIG.filter((rule) => {
+    if (!contract.preflight[rule.id]) return false;
+    if (rule.id === 'diecutOverprint') return layers.diecut;
+    if (rule.id === 'barcodeVerified') return eanCheck.isChecksumMatch;
+    if (rule.id === 'bleedPass') return contract.product.dimensions.bleed_mm >= 2.0;
+    if (rule.id === 'fontOutlined') return allKspVectorReady && overflowCount === 0;
+    return true;
+  }).length;
+  const allPreflightPassed = preflightPassCount === PREFLIGHT_RULE_CONFIG.length;
+
   return (
-    <div className="h-screen w-screen bg-[#05050A] text-white flex flex-col overflow-hidden select-none">
+    <div className="h-screen w-screen bg-[#09090b] text-white flex flex-col overflow-hidden select-none">
       {/* GLOBAL HEADER TOOLBAR */}
       <HeaderToolbar
         lang={lang}
@@ -482,9 +512,9 @@ export default function App() {
         onResetStudio={handleResetStudio}
       />
 
-      {/* MAIN 3-COLUMN CAD WORKBENCH CONSOLE */}
+      {/* MAIN CAD WORKBENCH CONSOLE */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* COLUMN 1: [ 01 // AGENT_INGESTION_&_OVERRIDE_DOCK ] */}
+        {/* COLUMN 1: [ 01 // AGENT_INGESTION_&_OVERRIDE_DOCK ] or Compact Icon Drawer */}
         {!isLeftDockCollapsed ? (
           <div className="relative flex h-full shrink-0">
             <AgentIngestionDock
@@ -502,24 +532,64 @@ export default function App() {
               onTriggerVectorCraft={handleTriggerVectorCraft}
               isVectorCraftRunning={isVectorCraftRunning}
               vectorCraftLog={vectorCraftLog}
+              onCollapse={() => setIsLeftDockCollapsed(true)}
             />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsLeftDockCollapsed(false)}
-            title="Expand Dock 01 (Agent Ingestion & Override)"
-            className="w-7 h-full bg-[#0A0C14] hover:bg-[#0D0E17] border-r border-[#1F1F2E] hover:border-[#00E5FF] flex flex-col items-center justify-between py-3 text-[#8A8FA3] hover:text-[#00E5FF] transition-colors shrink-0 cursor-pointer z-30"
+          <aside
+            aria-label="Collapsed Agent Inspector Icon Drawer"
+            className="w-11 h-full bg-[#09090b] border-r border-[#27272a] flex flex-col items-center py-2.5 gap-2 shrink-0 z-30"
           >
-            <span className="font-mono text-[10px] font-bold text-[#00E5FF]">▶</span>
-            <span
-              className="font-mono text-[10px] tracking-widest whitespace-nowrap"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+            <button
+              type="button"
+              onClick={() => setIsLeftDockCollapsed(false)}
+              title="Expand Inspector Sidebar"
+              className="w-8 h-8 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#a1a1aa] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
             >
-              [ ▶ EXPAND // 01_AGENT_DOCK ]
-            </span>
-            <span className="font-mono text-[10px] font-bold text-[#00E5FF]">▶</span>
-          </button>
+              <ChevronRight size={15} strokeWidth={1.5} />
+            </button>
+            <div className="w-5 h-px bg-[#27272a] my-0.5" />
+            <button
+              type="button"
+              onClick={() => setIsLeftDockCollapsed(false)}
+              title="01.A Base Structure Inspector"
+              className="w-8 h-8 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#a1a1aa] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <Layers size={15} strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsLeftDockCollapsed(false)}
+              title="01.B Technical Specs Override"
+              className="w-8 h-8 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#71717a] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <FileSliders size={15} strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsLeftDockCollapsed(false)}
+              title="01.C KSP Icon Assets Viewer"
+              className="w-8 h-8 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#71717a] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <Sparkles size={15} strokeWidth={1.5} />
+            </button>
+            <div className="mt-auto flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setModalMode('JSON_EXPORT')}
+                title="Load / Export JSON Contract"
+                className="w-8 h-8 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[#71717a] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <Upload size={14} strokeWidth={1.5} />
+              </button>
+              <span
+                title={`Overrides: ${ingestionMeta.overrideCount}`}
+                className="font-mono text-[9px] text-[#71717a] tabular-nums"
+              >
+                <Sliders size={12} strokeWidth={1.5} />
+              </span>
+            </div>
+          </aside>
         )}
 
         {/* COLUMN 2: [ 02 // DIECUT_&_MOCKUP_VIEWPORT ] */}
@@ -539,39 +609,57 @@ export default function App() {
           onToggleFullFocusMode={handleToggleFullFocusMode}
         />
 
-        {/* COLUMN 3: [ 03 // PREFLIGHT_AUDIT_&_EXPORT ] */}
-        {!isRightDockCollapsed ? (
-          <div className="relative flex h-full shrink-0">
-            <PreflightAuditDock
-              lang={lang}
-              contract={contract}
-              layers={layers}
-              activeSubstrate={activeSubstrate}
-              customPbrPack={customPbrPack}
-              onTogglePreflightRule={handleTogglePreflightRule}
-              onRunPreflightScan={handleRunPreflightScan}
-              onGeneratePdfX={handleGeneratePdfX}
-              isGeneratingPdf={isGeneratingPdf}
-              lastGeneratedTicket={lastGeneratedTicket}
-            />
-          </div>
-        ) : (
+        {/* COLUMN 3: [ 03 // PREFLIGHT_AUDIT_&_EXPORT ] - Collapsed by default to slim right-edge pill */}
+        {isRightDockCollapsed && (
           <button
             type="button"
             onClick={() => setIsRightDockCollapsed(false)}
-            title="Expand Dock 03 (Preflight Audit & Export)"
-            className="w-7 h-full bg-[#0A0C14] hover:bg-[#0D0E17] border-l border-[#1F1F2E] hover:border-[#00E5FF] flex flex-col items-center justify-between py-3 text-[#8A8FA3] hover:text-[#00E5FF] transition-colors shrink-0 cursor-pointer z-30"
+            title="Open Preflight Audit & Export Panel"
+            className={`absolute right-3 top-1/2 -translate-y-1/2 z-50 h-8 px-3 bg-[#09090b]/95 hover:bg-[#18181b] border font-mono text-[11px] font-semibold tracking-wide flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-lg ${
+              allPreflightPassed
+                ? 'border-[#06b6d4]/70 text-[#00f0ff] hover:border-[#00f0ff]'
+                : 'border-[#EF4444]/80 text-[#EF4444] hover:border-[#EF4444]'
+            }`}
           >
-            <span className="font-mono text-[10px] font-bold text-[#00E5FF]">◀</span>
-            <span
-              className="font-mono text-[10px] tracking-widest whitespace-nowrap"
-              style={{ writingMode: 'vertical-rl' }}
-            >
-              [ ◀ EXPAND // 03_PREFLIGHT_QA ]
-            </span>
-            <span className="font-mono text-[10px] font-bold text-[#00E5FF]">◀</span>
+            {allPreflightPassed ? (
+              <>
+                <CheckCircle2 size={13} strokeWidth={1.75} className="text-[#06b6d4]" />
+                <span>[ ✓ PREFLIGHT: READY ]</span>
+              </>
+            ) : (
+              <>
+                <ShieldAlert size={13} strokeWidth={1.75} className="text-[#EF4444]" />
+                <span>
+                  [ ! PREFLIGHT: {preflightPassCount}/{PREFLIGHT_RULE_CONFIG.length} ]
+                </span>
+              </>
+            )}
           </button>
         )}
+
+        {/* Slide-Over Right Preflight Drawer (Only slides open when clicked) */}
+        <div
+          aria-hidden={isRightDockCollapsed}
+          className={`absolute top-0 right-0 h-full z-[60] transition-transform duration-200 ease-out ${
+            isRightDockCollapsed
+              ? 'translate-x-full pointer-events-none invisible'
+              : 'translate-x-0 visible'
+          }`}
+        >
+          <PreflightAuditDock
+            lang={lang}
+            contract={contract}
+            layers={layers}
+            activeSubstrate={activeSubstrate}
+            customPbrPack={customPbrPack}
+            onTogglePreflightRule={handleTogglePreflightRule}
+            onRunPreflightScan={handleRunPreflightScan}
+            onGeneratePdfX={handleGeneratePdfX}
+            isGeneratingPdf={isGeneratingPdf}
+            lastGeneratedTicket={lastGeneratedTicket}
+            onCollapse={() => setIsRightDockCollapsed(true)}
+          />
+        </div>
       </div>
 
       {/* AGENT CONTRACT INGESTION & PDF/X PRODUCTION TICKET MODAL */}

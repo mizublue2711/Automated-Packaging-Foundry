@@ -42,6 +42,7 @@ interface PreflightAuditDockProps {
   onGeneratePdfX: () => void;
   isGeneratingPdf: boolean;
   lastGeneratedTicket: ProductionJobTicket | null;
+  onCollapse?: () => void;
 }
 
 export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
@@ -55,6 +56,7 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
   onGeneratePdfX,
   isGeneratingPdf,
   lastGeneratedTicket,
+  onCollapse,
 }) => {
   const t = getTranslation(lang).col3;
 
@@ -116,40 +118,52 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
   const activeLayerCount = Object.values(layers).filter(Boolean).length;
 
   return (
-    <aside className="w-[345px] shrink-0 h-full bg-[#0A0C14] border-l border-[#1F1F2E] flex flex-col select-none">
+    <aside className="w-[340px] shrink-0 h-full bg-[#09090b] border-l border-[#27272a] flex flex-col select-none shadow-2xl">
       {/* Column Header */}
-      <div className="h-10 px-3.5 border-b border-[#1F1F2E] bg-[#0D0E17] flex items-center justify-between shrink-0">
+      <div className="h-10 px-3.5 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <ShieldCheck size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
-          <span className="font-mono text-xs font-semibold tracking-wider text-white truncate">
+          <ShieldCheck size={15} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
+          <span className="font-mono text-xs font-semibold tracking-wider text-zinc-100 truncate">
             {t.header}
           </span>
         </div>
-        {allPassed ? (
-          <span className="px-1.5 py-0.5 bg-[#05050A] border border-[#10B981] font-mono text-[10px] font-semibold text-[#10B981] whitespace-nowrap shrink-0">
-            {t.statusReady}
-          </span>
-        ) : (
-          <span className="px-1.5 py-0.5 bg-[#05050A] border border-[#EF4444] font-mono text-[10px] font-semibold text-[#EF4444] whitespace-nowrap shrink-0">
-            [ {passCount}/{evaluatedRules.length} {t.statusPassSuffix} ]
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {allPassed ? (
+            <span className="px-1.5 py-0.5 bg-[#06b6d4]/10 border border-[#06b6d4]/70 font-mono text-[10px] font-semibold text-[#00f0ff] whitespace-nowrap">
+              {t.statusReady}
+            </span>
+          ) : (
+            <span className="px-1.5 py-0.5 bg-[#09090b] border border-[#EF4444] font-mono text-[10px] font-semibold text-[#EF4444] whitespace-nowrap">
+              [ {passCount}/{evaluatedRules.length} {t.statusPassSuffix} ]
+            </span>
+          )}
+          {onCollapse && (
+            <button
+              type="button"
+              onClick={onCollapse}
+              title="Collapse Preflight Panel"
+              className="w-6 h-6 bg-[#09090b] hover:bg-[#27272a] border border-[#27272a] text-[#71717a] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X size={13} strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Scrollable Body */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#1F1F2E]">
+      <div className="flex-1 overflow-y-auto divide-y divide-[#27272a]">
         {/* ====================================================================
             SECTION 03.A: CONFIG-DRIVEN PRE-FLIGHT CHECKLIST
             ==================================================================== */}
         <section className="p-3.5 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-semibold text-[#00E5FF] tracking-wide">
+            <span className="font-mono text-[11px] font-semibold text-zinc-300 tracking-wide">
               {t.checklistHeader}
             </span>
             <button
               type="button"
               onClick={onRunPreflightScan}
-              className="px-2 py-0.5 bg-[#0D0E17] border border-[#2D2D44] hover:border-[#00E5FF] font-mono text-[10px] text-[#00E5FF] transition-colors whitespace-nowrap cursor-pointer"
+              className="px-2 py-0.5 bg-[#18181b] border border-[#27272a] hover:border-[#3f3f46] hover:bg-[#27272a] font-mono text-[10px] text-zinc-300 hover:text-white transition-colors whitespace-nowrap cursor-pointer"
             >
               {t.reverifyBtn}
             </button>
@@ -162,9 +176,9 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
                 type="button"
                 onClick={() => onTogglePreflightRule(rule.id)}
                 title="Click to toggle hardware rule interlock"
-                className={`w-full text-left p-2 bg-[#0D0E17] border transition-colors cursor-pointer ${
+                className={`w-full text-left p-2 bg-[#18181b] border transition-colors cursor-pointer ${
                   rule.pass
-                    ? 'border-[#1F1F2E] hover:border-[#2D2D44]'
+                    ? 'border-[#27272a] hover:border-[#3f3f46]'
                     : 'border-[#EF4444]'
                 }`}
               >
@@ -177,17 +191,17 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
                     >
                       {rule.pass ? '[ ✓ ]' : '[ ! ]'}
                     </span>
-                    <span className="font-mono text-[11px] font-semibold text-white truncate">
+                    <span className="font-mono text-[11px] font-semibold text-zinc-100 truncate">
                       {rule.code} // {rule.label[lang]}
                     </span>
                   </div>
                   {rule.pass ? (
-                    <Check size={16} strokeWidth={1.25} className="text-[#10B981] shrink-0" />
+                    <Check size={15} strokeWidth={1.5} className="text-[#10B981] shrink-0" />
                   ) : (
-                    <X size={16} strokeWidth={1.25} className="text-[#EF4444] shrink-0" />
+                    <X size={15} strokeWidth={1.5} className="text-[#EF4444] shrink-0" />
                   )}
                 </div>
-                <div className="mt-0.5 pl-9 font-mono text-[10px] text-[#8A8FA3] truncate">
+                <div className="mt-0.5 pl-9 font-mono text-[10px] text-[#71717a] truncate">
                   {rule.detail}
                 </div>
               </button>
@@ -196,17 +210,17 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
 
           {/* Compact Telemetry Summary Strip */}
           <div className="grid grid-cols-3 gap-1.5 pt-1 font-mono text-[10px] tabular-nums">
-            <div className="bg-[#05050A] border border-[#1F1F2E] px-2 py-1.5">
-              <div className="text-[#8A8FA3] text-[9px] truncate">{t.surfaceArea}</div>
-              <div className="text-[#00E5FF] font-semibold">{surfaceAreaM2.toFixed(3)} m²</div>
+            <div className="bg-[#18181b] border border-[#27272a] px-2 py-1.5">
+              <div className="text-[#71717a] text-[9px] truncate">{t.surfaceArea}</div>
+              <div className="text-zinc-100 font-semibold">{surfaceAreaM2.toFixed(3)} m²</div>
             </div>
-            <div className="bg-[#05050A] border border-[#1F1F2E] px-2 py-1.5">
-              <div className="text-[#8A8FA3] text-[9px] truncate">{t.boardWeight}</div>
+            <div className="bg-[#18181b] border border-[#27272a] px-2 py-1.5">
+              <div className="text-[#71717a] text-[9px] truncate">{t.boardWeight}</div>
               <div className="text-[#10B981] font-semibold">{estimatedWeightGrams} g</div>
             </div>
-            <div className="bg-[#05050A] border border-[#1F1F2E] px-2 py-1.5">
-              <div className="text-[#8A8FA3] text-[9px] truncate">TAC_INK</div>
-              <div className="text-white font-semibold">248%</div>
+            <div className="bg-[#18181b] border border-[#27272a] px-2 py-1.5">
+              <div className="text-[#71717a] text-[9px] truncate">TAC_INK</div>
+              <div className="text-zinc-100 font-semibold">248%</div>
             </div>
           </div>
         </section>
@@ -214,21 +228,21 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
         {/* ====================================================================
             COLLAPSIBLE ACCORDION: [ ▸ TELEMETRY_DETAILS & INK_SEPARATIONS ]
             ==================================================================== */}
-        <section className="bg-[#0A0C14]">
+        <section className="bg-[#09090b]">
           <button
             type="button"
             onClick={() => setShowTelemetryDetails((v) => !v)}
             className={`w-full h-9 px-3.5 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
               showTelemetryDetails
-                ? 'bg-[#0D0E17] text-[#00E5FF] border-b border-[#1F1F2E]'
-                : 'bg-[#0A0C14] text-white hover:bg-[#0D0E17]'
+                ? 'bg-[#18181b] text-white border-b border-[#27272a]'
+                : 'bg-[#09090b] text-zinc-300 hover:bg-[#18181b] hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5 truncate">
               {showTelemetryDetails ? (
-                <ChevronDown size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
+                <ChevronDown size={15} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               ) : (
-                <ChevronRight size={16} strokeWidth={1.25} className="text-[#8A8FA3] shrink-0" />
+                <ChevronRight size={15} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
               )}
               <span className="truncate">
                 [ {showTelemetryDetails ? '▾' : '▸'} {t.telemetryAccordion} ]
@@ -238,59 +252,59 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
 
           {showTelemetryDetails && (
             <div className="p-3.5 space-y-2.5">
-              <div className="bg-[#05050A] border border-[#2D2D44] p-3 font-mono text-xs space-y-2 tabular-nums">
-                <div className="flex items-center justify-between border-b border-[#1F1F2E] pb-1.5">
-                  <span className="text-[#8A8FA3]">{t.surfaceArea}:</span>
-                  <span className="text-[#00E5FF] font-semibold">
+              <div className="bg-[#18181b] border border-[#27272a] p-3 font-mono text-xs space-y-2 tabular-nums">
+                <div className="flex items-center justify-between border-b border-[#27272a] pb-1.5">
+                  <span className="text-[#71717a]">{t.surfaceArea}:</span>
+                  <span className="text-zinc-100 font-semibold">
                     {surfaceAreaM2.toFixed(4)} m²
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#1F1F2E] pb-1.5">
-                  <span className="text-[#8A8FA3]">{t.sheetExtents}:</span>
-                  <span className="text-white">
+                <div className="flex items-center justify-between border-b border-[#27272a] pb-1.5">
+                  <span className="text-[#71717a]">{t.sheetExtents}:</span>
+                  <span className="text-zinc-200">
                     {flatSheetW.toFixed(0)} × {flatSheetH.toFixed(0)} mm
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#1F1F2E] pb-1.5">
-                  <span className="text-[#8A8FA3]">{t.substrateGrade}:</span>
-                  <span className="text-white text-[11px]">{baseSubstrateSpec.shortCode}</span>
+                <div className="flex items-center justify-between border-b border-[#27272a] pb-1.5">
+                  <span className="text-[#71717a]">{t.substrateGrade}:</span>
+                  <span className="text-zinc-200 text-[11px]">{baseSubstrateSpec.shortCode}</span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#1F1F2E] pb-1.5">
-                  <span className="text-[#8A8FA3]">{t.pbrOptics}:</span>
-                  <span className="text-[#00E5FF] text-[11px]">
+                <div className="flex items-center justify-between border-b border-[#27272a] pb-1.5">
+                  <span className="text-[#71717a]">{t.pbrOptics}:</span>
+                  <span className="text-zinc-200 text-[11px]">
                     R:{effectiveRoughness.toFixed(2)} / M:{effectiveMetalness.toFixed(2)}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#1F1F2E] pb-1.5">
-                  <span className="text-[#8A8FA3]">{t.boardWeight}:</span>
+                <div className="flex items-center justify-between border-b border-[#27272a] pb-1.5">
+                  <span className="text-[#71717a]">{t.boardWeight}:</span>
                   <span className="text-[#10B981] font-semibold">
                     {estimatedWeightGrams} g ({effectiveGsm} GSM)
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[#8A8FA3]">{t.activeLayers}:</span>
-                  <span className="text-white">
+                  <span className="text-[#71717a]">{t.activeLayers}:</span>
+                  <span className="text-zinc-200">
                     0{activeLayerCount} / 05 CAD
                   </span>
                 </div>
               </div>
 
               {/* Config-Driven Ink Separation Plates Bar */}
-              <div className="bg-[#0D0E17] border border-[#1F1F2E] p-2.5 space-y-1.5">
-                <div className="flex items-center justify-between font-mono text-[10px] text-[#8A8FA3]">
+              <div className="bg-[#18181b] border border-[#27272a] p-2.5 space-y-1.5">
+                <div className="flex items-center justify-between font-mono text-[10px] text-[#71717a]">
                   <span>{t.tacLabel}</span>
-                  <span className="text-white">248% (MAX 300%)</span>
+                  <span className="text-zinc-200">248% (MAX 300%)</span>
                 </div>
                 <div className="grid grid-cols-6 gap-1 font-mono text-[9px] text-center">
                   {INK_SEPARATION_PLATES.map((plate) => (
                     <div
                       key={plate.code}
-                      className="bg-[#05050A] border py-1"
+                      className="bg-[#09090b] border py-1"
                       style={{
                         borderColor: plate.border,
                         color: plate.text,
@@ -308,23 +322,23 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
         {/* ====================================================================
             COLLAPSIBLE ACCORDION: [ ▸ RAW_AGENT_CONTRACT_JSON ]
             ==================================================================== */}
-        <section className="bg-[#0A0C14]">
+        <section className="bg-[#09090b]">
           <button
             type="button"
             onClick={() => setShowLiveJson((v) => !v)}
             className={`w-full h-9 px-3.5 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
               showLiveJson
-                ? 'bg-[#0D0E17] text-[#00E5FF] border-b border-[#1F1F2E]'
-                : 'bg-[#0A0C14] text-white hover:bg-[#0D0E17]'
+                ? 'bg-[#18181b] text-white border-b border-[#27272a]'
+                : 'bg-[#09090b] text-zinc-300 hover:bg-[#18181b] hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5 truncate">
               {showLiveJson ? (
-                <ChevronDown size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
+                <ChevronDown size={15} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               ) : (
-                <ChevronRight size={16} strokeWidth={1.25} className="text-[#8A8FA3] shrink-0" />
+                <ChevronRight size={15} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
               )}
-              <Code2 size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
+              <Code2 size={15} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
               <span className="truncate">
                 [ {showLiveJson ? '▾' : '▸'} {t.contractAccordion} ]
               </span>
@@ -333,7 +347,7 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
 
           {showLiveJson && (
             <div className="p-3.5">
-              <pre className="p-2.5 bg-[#05050A] border border-[#1F1F2E] font-mono text-[10px] text-[#00E5FF] overflow-x-auto max-h-48 leading-relaxed">
+              <pre className="p-2.5 bg-[#18181b] border border-[#27272a] font-mono text-[10px] text-zinc-300 overflow-x-auto max-h-48 leading-relaxed">
                 {JSON.stringify(contract, null, 2)}
               </pre>
             </div>
@@ -342,15 +356,15 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
 
         {lastGeneratedTicket && (
           <section className="p-3.5">
-            <div className="p-2.5 bg-[#05050A] border border-[#10B981] space-y-1.5 font-mono text-[10px]">
-              <div className="flex items-center justify-between text-[#10B981] font-semibold">
+            <div className="p-2.5 bg-[#18181b] border border-[#06b6d4]/60 space-y-1.5 font-mono text-[10px]">
+              <div className="flex items-center justify-between text-[#00f0ff] font-semibold">
                 <span className="flex items-center gap-1">
-                  <FileCheck2 size={16} strokeWidth={1.25} />
+                  <FileCheck2 size={15} strokeWidth={1.5} />
                   PDF/X-4 MASTER COMPILED
                 </span>
                 <span>{lastGeneratedTicket.jobId}</span>
               </div>
-              <div className="text-[#8A8FA3] flex items-center justify-between tabular-nums">
+              <div className="text-[#71717a] flex items-center justify-between tabular-nums">
                 <span>AREA: {lastGeneratedTicket.surfaceAreaM2}m²</span>
                 <span>WT: {lastGeneratedTicket.weightGrams}g</span>
                 <span>{lastGeneratedTicket.timestamp}</span>
@@ -361,10 +375,10 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
       </div>
 
       {/* PERSISTENT PRIMARY CTA FOOTER */}
-      <div className="p-3.5 border-t border-[#1F1F2E] bg-[#0D0E17] space-y-2 shrink-0">
+      <div className="p-3.5 border-t border-[#27272a] bg-[#18181b] space-y-2 shrink-0">
         {overflowCount > 0 && (
-          <div className="px-2.5 py-1.5 bg-[#05050A] border border-[#EF4444] flex items-center gap-2 font-mono text-[10px] text-[#EF4444]">
-            <AlertTriangle size={16} strokeWidth={1.25} className="shrink-0" />
+          <div className="px-2.5 py-1.5 bg-[#09090b] border border-[#EF4444] flex items-center gap-2 font-mono text-[10px] text-[#EF4444]">
+            <AlertTriangle size={15} strokeWidth={1.5} className="shrink-0" />
             <span className="truncate">
               {t.overflowGateAlert} ({overflowCount})
             </span>
@@ -372,8 +386,8 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
         )}
 
         {!allPassed && overflowCount === 0 && (
-          <div className="px-2.5 py-1.5 bg-[#05050A] border border-[#EF4444] flex items-center gap-2 font-mono text-[10px] text-[#EF4444]">
-            <AlertTriangle size={16} strokeWidth={1.25} className="shrink-0" />
+          <div className="px-2.5 py-1.5 bg-[#09090b] border border-[#EF4444] flex items-center gap-2 font-mono text-[10px] text-[#EF4444]">
+            <AlertTriangle size={15} strokeWidth={1.5} className="shrink-0" />
             <span className="truncate">
               {evaluatedRules.length - passCount} {t.warnPreflight}
             </span>
@@ -384,18 +398,18 @@ export const PreflightAuditDock: React.FC<PreflightAuditDockProps> = ({
           type="button"
           onClick={onGeneratePdfX}
           disabled={isGeneratingPdf}
-          className="w-full h-11 bg-[#05050A] hover:bg-[#00E5FF] text-[#00E5FF] hover:text-[#05050A] border-2 border-[#00E5FF] font-mono text-xs font-bold tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
+          className="w-full h-10 bg-zinc-100 hover:bg-white text-[#09090b] border border-zinc-200 font-mono text-xs font-bold tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer whitespace-nowrap disabled:opacity-60"
         >
           {isGeneratingPdf ? (
             <>
-              <RefreshCw size={16} strokeWidth={1.25} className="animate-spin" />
+              <RefreshCw size={15} strokeWidth={1.5} className="animate-spin" />
               <span>{t.compilingCta}</span>
             </>
           ) : (
             <>
-              <Printer size={16} strokeWidth={1.25} />
+              <Printer size={15} strokeWidth={1.5} />
               <span>{t.generateCta}</span>
-              <Download size={16} strokeWidth={1.25} />
+              <Download size={15} strokeWidth={1.5} />
             </>
           )}
         </button>

@@ -386,13 +386,13 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
   const isFullFocusActive = isLeftDockCollapsed && isRightDockCollapsed;
 
   return (
-    <main className="flex-1 h-full bg-[#05050A] flex flex-col min-w-0 select-none relative overflow-hidden">
+    <main className="flex-1 h-full bg-[#09090b] flex flex-col min-w-0 select-none relative overflow-hidden">
       {/* ====================================================================
           TOP VIEWPORT TOOLBAR (Dock Collapse Controls, 2D/3D Toggle, Fit & Focus)
           ==================================================================== */}
       <div
         ref={toolbarRef}
-        className="min-h-10 py-1 px-2.5 border-b border-[#1F1F2E] bg-[#0A0C14] flex flex-wrap items-center justify-between gap-1.5 shrink-0 z-50 relative"
+        className="min-h-10 py-1 px-2.5 border-b border-[#27272a] bg-[#09090b] flex flex-wrap items-center justify-between gap-1.5 shrink-0 z-30 relative"
       >
         {/* Left: Left Dock Collapse Toggle, Viewport Title & View Mode Toggle */}
         <div className="flex items-center gap-1.5 shrink-0">
@@ -401,11 +401,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
               type="button"
               onClick={onToggleLeftDock}
               title="Toggle Left Parameter Dock (Col 01)"
-              className={`h-7 px-2 border font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
-                isLeftDockCollapsed
-                  ? 'bg-[#5322FF]/30 text-[#00E5FF] border-[#00E5FF]'
-                  : 'bg-[#0D0E17] text-[#8A8FA3] hover:text-white border-[#2D2D44] hover:border-[#00E5FF]'
-              }`}
+              className="h-7 px-2 border border-[#27272a] hover:border-[#3f3f46] bg-[#18181b] hover:bg-[#27272a] font-mono text-[10px] font-medium text-[#a1a1aa] hover:text-white flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
             >
               {isLeftDockCollapsed ? (
                 <>
@@ -422,41 +418,39 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
           )}
 
           <div className="hidden 2xl:flex items-center gap-1.5 mr-1">
-            <Crosshair size={16} strokeWidth={1.25} className="text-[#00E5FF]" />
-            <span className="font-mono text-xs font-semibold tracking-wider text-white whitespace-nowrap">
+            <Crosshair size={15} strokeWidth={1.5} className="text-[#71717a]" />
+            <span className="font-mono text-xs font-semibold tracking-wider text-zinc-200 whitespace-nowrap">
               {t.header}
             </span>
           </div>
 
-          <div className="flex items-center border border-[#2D2D44] bg-[#05050A]">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setViewMode('2D_FLAT')}
-              className={`h-7 px-2.5 font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+              className={`h-7 px-2.5 border font-mono text-[11px] font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
                 viewMode === '2D_FLAT'
-                  ? 'bg-[#00E5FF] text-[#05050A]'
-                  : 'text-[#8A8FA3] hover:text-white'
+                  ? 'bg-[#18181b] text-white border-[#3f3f46]'
+                  : 'bg-[#09090b] text-[#71717a] border-[#27272a] hover:text-zinc-200 hover:bg-[#18181b]'
               }`}
             >
-              <FileCode2 size={15} strokeWidth={1.25} />
+              <FileCode2 size={14} strokeWidth={1.5} />
               <span>{t.flat2dBtn}</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode('3D_FOLDED')}
-              className={`h-7 px-2.5 font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
-                viewMode === '3D_FOLDED'
-                  ? 'bg-[#00E5FF] text-[#05050A]'
-                  : 'text-[#8A8FA3] hover:text-white'
+              className={`h-7 px-3 font-mono text-[11px] font-bold flex items-center gap-1.5 transition-all duration-200 whitespace-nowrap cursor-pointer bg-[#5322ff] text-white shadow-[0_0_16px_rgba(83,34,255,0.45)] hover:brightness-110 ${
+                viewMode === '3D_FOLDED' ? 'ring-1 ring-white/30' : 'opacity-95'
               }`}
             >
-              <Box size={15} strokeWidth={1.25} />
+              <Box size={14} strokeWidth={1.75} />
               <span>{t.folded3dBtn}</span>
             </button>
           </div>
         </div>
 
-        {/* Center: Config-Driven Dropdown Menus */}
+        {/* Center: Config-Driven Dropdown Menus (Neutralized Slate Chrome) */}
         <div className="flex items-center gap-1.5 shrink-0">
           {/* 1. [ ▾ CAD_LAYERS (5) ] DROPDOWN */}
           <div className="relative">
@@ -467,18 +461,18 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
               }
               className={`h-7 px-2.5 border font-mono text-[11px] flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
                 openDropdown === 'LAYERS'
-                  ? 'bg-[#00E5FF] text-[#05050A] border-[#00E5FF] font-semibold'
-                  : 'bg-[#0D0E17] text-white border-[#2D2D44] hover:border-[#00E5FF]'
+                  ? 'bg-[#27272a] text-white border-[#3f3f46] font-semibold'
+                  : 'bg-[#18181b] text-zinc-300 border-[#27272a] hover:border-[#3f3f46] hover:text-white'
               }`}
             >
-              <Layers size={15} strokeWidth={1.25} />
+              <Layers size={14} strokeWidth={1.5} className="text-[#71717a]" />
               <span>
                 [ ▾ {t.cadLayersMenu} ({activeLayerCount}) ]
               </span>
             </button>
 
             {openDropdown === 'LAYERS' && (
-              <div className="absolute left-0 top-8 w-64 max-w-[85vw] bg-[#0A0C14] border-2 border-[#00E5FF] z-50 divide-y divide-[#1F1F2E]">
+              <div className="absolute left-0 top-8 w-64 max-w-[85vw] bg-[#09090b] border border-[#27272a] shadow-2xl z-50 divide-y divide-[#27272a]">
                 {CAD_LAYER_CONFIG.map((item) => {
                   const checked = layers[item.id];
                   return (
@@ -486,19 +480,19 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                       key={item.id}
                       type="button"
                       onClick={() => onToggleLayer(item.id)}
-                      className="w-full px-3 py-2 flex items-center justify-between text-left font-mono text-xs hover:bg-[#0D0E17] transition-colors cursor-pointer"
+                      className="w-full px-3 py-2 flex items-center justify-between text-left font-mono text-xs hover:bg-[#18181b] transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
                         <span
                           className={`w-3.5 h-3.5 border flex items-center justify-center ${
                             checked
-                              ? 'border-[#00E5FF] bg-[#00E5FF]/15 text-[#00E5FF]'
-                              : 'border-[#2D2D44] bg-[#05050A]'
+                              ? 'border-zinc-400 bg-zinc-800 text-white'
+                              : 'border-[#27272a] bg-[#09090b]'
                           }`}
                         >
-                          {checked && <Check size={12} strokeWidth={1.5} />}
+                          {checked && <Check size={11} strokeWidth={1.75} />}
                         </span>
-                        <span className={checked ? 'text-white' : 'text-[#8A8FA3]'}>
+                        <span className={checked ? 'text-zinc-100' : 'text-[#71717a]'}>
                           {item.label[lang]}
                         </span>
                       </div>
@@ -515,7 +509,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
             )}
           </div>
 
-          {/* 2. [ ▾ CAMERA_PRESETS ] DROPDOWN (Aligned right-0 origin-top-right to prevent right-edge clipping) */}
+          {/* 2. [ ▾ CAMERA_PRESETS ] DROPDOWN */}
           <div className="relative">
             <button
               type="button"
@@ -524,16 +518,16 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
               }
               className={`h-7 px-2.5 border font-mono text-[11px] flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
                 openDropdown === 'CAMERA'
-                  ? 'bg-[#00E5FF] text-[#05050A] border-[#00E5FF] font-semibold'
-                  : 'bg-[#0D0E17] text-white border-[#2D2D44] hover:border-[#00E5FF]'
+                  ? 'bg-[#27272a] text-white border-[#3f3f46] font-semibold'
+                  : 'bg-[#18181b] text-zinc-300 border-[#27272a] hover:border-[#3f3f46] hover:text-white'
               }`}
             >
-              <Camera size={15} strokeWidth={1.25} />
+              <Camera size={14} strokeWidth={1.5} className="text-[#71717a]" />
               <span>[ ▾ {t.cameraPresetsMenu} ]</span>
             </button>
 
             {openDropdown === 'CAMERA' && (
-              <div className="absolute right-0 origin-top-right top-8 w-64 max-w-[85vw] bg-[#0A0C14] border-2 border-[#00E5FF] z-50 divide-y divide-[#1F1F2E]">
+              <div className="absolute right-0 origin-top-right top-8 w-64 max-w-[85vw] bg-[#09090b] border border-[#27272a] shadow-2xl z-50 divide-y divide-[#27272a]">
                 {CAMERA_PRESET_CONFIG.map((camItem) => {
                   const isCurrent =
                     (camItem.id === 'WIREFRAME_XRAY' && xrayMode) ||
@@ -545,13 +539,13 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                       key={camItem.id}
                       type="button"
                       onClick={() => handleApplyCameraPreset(camItem)}
-                      className="w-full px-3 py-2 flex items-center justify-between text-left font-mono text-xs hover:bg-[#0D0E17] transition-colors cursor-pointer"
+                      className="w-full px-3 py-2 flex items-center justify-between text-left font-mono text-xs hover:bg-[#18181b] transition-colors cursor-pointer"
                     >
-                      <span className={isCurrent ? 'text-[#00E5FF] font-semibold' : 'text-white'}>
+                      <span className={isCurrent ? 'text-white font-semibold' : 'text-zinc-300'}>
                         {camItem.label[lang]}
                       </span>
                       {isCurrent && (
-                        <Check size={14} strokeWidth={1.25} className="text-[#00E5FF]" />
+                        <Check size={14} strokeWidth={1.5} className="text-zinc-200" />
                       )}
                     </button>
                   );
@@ -560,7 +554,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
             )}
           </div>
 
-          {/* 3. [ ▾ SUBSTRATE_&_FINISH ] MATERIAL DROPDOWN (Aligned right-0 origin-top-right so it opens downwards-left inside Viewport 02) */}
+          {/* 3. [ ▾ SUBSTRATE_&_FINISH ] MATERIAL DROPDOWN */}
           <div className="relative">
             <button
               type="button"
@@ -569,21 +563,19 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
               }
               className={`h-7 px-2.5 border font-mono text-[11px] flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
                 openDropdown === 'SUBSTRATE'
-                  ? 'bg-[#00E5FF] text-[#05050A] border-[#00E5FF] font-semibold'
-                  : activeSubstrate === 'AGENT_AN_CUSTOM_PBR'
-                  ? 'bg-[#5322FF]/30 text-[#00E5FF] border-[#00E5FF]'
-                  : 'bg-[#0D0E17] text-white border-[#2D2D44] hover:border-[#00E5FF]'
+                  ? 'bg-[#27272a] text-white border-[#3f3f46] font-semibold'
+                  : 'bg-[#18181b] text-zinc-300 border-[#27272a] hover:border-[#3f3f46] hover:text-white'
               }`}
             >
-              <Palette size={15} strokeWidth={1.25} />
+              <Palette size={14} strokeWidth={1.5} className="text-[#71717a]" />
               <span>[ ▾ {t.substrateMenu} ]</span>
             </button>
 
             {openDropdown === 'SUBSTRATE' && (
-              <div className="absolute right-0 origin-top-right top-8 w-80 sm:w-96 max-w-[85vw] bg-[#0A0C14] border-2 border-[#00E5FF] z-50 divide-y divide-[#1F1F2E]">
-                <div className="px-3 py-1.5 bg-[#0D0E17] font-mono text-[10px] text-[#8A8FA3] flex items-center justify-between">
+              <div className="absolute right-0 origin-top-right top-8 w-80 sm:w-96 max-w-[85vw] bg-[#09090b] border border-[#27272a] shadow-2xl z-50 divide-y divide-[#27272a]">
+                <div className="px-3 py-1.5 bg-[#18181b] font-mono text-[10px] text-[#71717a] flex items-center justify-between">
                   <span>HYBRID 3D PACKAGING MATERIAL ARCHITECTURE</span>
-                  <span className="text-[#00E5FF]">PBR_SHADER</span>
+                  <span className="text-zinc-400">PBR_SHADER</span>
                 </div>
 
                 {(Object.keys(SUBSTRATE_MATERIAL_CONFIG) as SubstratePresetId[]).map(
@@ -598,10 +590,8 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                         onClick={() => handleSelectSubstrateOption(presetKey)}
                         className={`w-full px-3 py-2.5 text-left font-mono transition-colors cursor-pointer ${
                           isSelected
-                            ? 'bg-[#0D0E17] text-[#00E5FF]'
-                            : spec.isCustomAgentSlot
-                            ? 'bg-[#5322FF]/15 text-white hover:bg-[#5322FF]/25'
-                            : 'hover:bg-[#0D0E17] text-white'
+                            ? 'bg-[#18181b] text-white'
+                            : 'hover:bg-[#18181b] text-zinc-300'
                         }`}
                       >
                         <div className="flex items-center justify-between text-xs">
@@ -609,12 +599,12 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                           {isSelected && (
                             <Check
                               size={14}
-                              strokeWidth={1.25}
-                              className="text-[#00E5FF] shrink-0"
+                              strokeWidth={1.5}
+                              className="text-zinc-200 shrink-0"
                             />
                           )}
                         </div>
-                        <div className="mt-1 flex items-center justify-between text-[10px] text-[#8A8FA3] tabular-nums">
+                        <div className="mt-1 flex items-center justify-between text-[10px] text-[#71717a] tabular-nums">
                           <span>
                             ROUGH: {spec.roughness.toFixed(2)} | METAL: {spec.metalness.toFixed(2)}
                           </span>
@@ -632,9 +622,13 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
             <button
               type="button"
               onClick={() => setShowPbrDrawer((v) => !v)}
-              className="h-7 px-2 bg-[#5322FF] border border-[#00E5FF] font-mono text-[10px] text-white font-semibold flex items-center gap-1 whitespace-nowrap cursor-pointer"
+              className={`h-7 px-2 border font-mono text-[10px] font-medium flex items-center gap-1 whitespace-nowrap cursor-pointer transition-colors ${
+                showPbrDrawer
+                  ? 'bg-[#27272a] border-[#3f3f46] text-white'
+                  : 'bg-[#18181b] border-[#27272a] text-zinc-300 hover:border-[#3f3f46] hover:text-white'
+              }`}
             >
-              <Sparkles size={14} strokeWidth={1.25} className="text-[#00E5FF]" />
+              <Sparkles size={13} strokeWidth={1.5} className="text-[#71717a]" />
               <span>{t.pbrBindingsBtn}</span>
             </button>
           )}
@@ -646,29 +640,29 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
             type="button"
             onClick={() => setZoom((z) => Math.max(0.25, Number((z - 0.15).toFixed(2))))}
             title="Zoom Out"
-            className="h-7 w-7 bg-[#0D0E17] border border-[#1F1F2E] hover:border-[#00E5FF] flex items-center justify-center text-[#8A8FA3] hover:text-white transition-colors cursor-pointer"
+            className="h-7 w-7 bg-[#18181b] border border-[#27272a] hover:border-[#3f3f46] flex items-center justify-center text-[#71717a] hover:text-white transition-colors cursor-pointer"
           >
-            <ZoomOut size={15} strokeWidth={1.25} />
+            <ZoomOut size={14} strokeWidth={1.5} />
           </button>
-          <span className="h-7 px-2 bg-[#0D0E17] border border-[#1F1F2E] font-mono text-[11px] text-white tabular-nums flex items-center">
+          <span className="h-7 px-2 bg-[#18181b] border border-[#27272a] font-mono text-[11px] text-zinc-200 tabular-nums flex items-center">
             {Math.round(zoom * 100)}%
           </span>
           <button
             type="button"
             onClick={() => setZoom((z) => Math.min(3.4, Number((z + 0.15).toFixed(2))))}
             title="Zoom In"
-            className="h-7 w-7 bg-[#0D0E17] border border-[#1F1F2E] hover:border-[#00E5FF] flex items-center justify-center text-[#8A8FA3] hover:text-white transition-colors cursor-pointer"
+            className="h-7 w-7 bg-[#18181b] border border-[#27272a] hover:border-[#3f3f46] flex items-center justify-center text-[#71717a] hover:text-white transition-colors cursor-pointer"
           >
-            <ZoomIn size={15} strokeWidth={1.25} />
+            <ZoomIn size={14} strokeWidth={1.5} />
           </button>
 
           <button
             type="button"
             onClick={handleResetView}
             title="Fit Entire Dieline (0%) or 3D Carton (100%) to Viewport"
-            className="h-7 px-2.5 bg-[#0D0E17] border border-[#00E5FF] text-[#00E5FF] hover:bg-[#00E5FF] hover:text-[#05050A] font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
+            className="h-7 px-2.5 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] hover:border-[#3f3f46] text-zinc-200 hover:text-white font-mono text-[10px] font-medium flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
           >
-            <Maximize2 size={13} strokeWidth={1.5} />
+            <Maximize2 size={12} strokeWidth={1.5} className="text-[#71717a]" />
             <span>{t.fitBtn}</span>
           </button>
 
@@ -677,46 +671,21 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
               type="button"
               onClick={onToggleFullFocusMode}
               title="Toggle 100% Full Canvas Focus Mode"
-              className={`h-7 px-2 border font-mono text-[10px] font-semibold hidden xl:flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
+              className={`h-7 px-2 border font-mono text-[10px] font-medium hidden xl:flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
                 isFullFocusActive
-                  ? 'bg-[#00E5FF] text-[#05050A] border-[#00E5FF]'
-                  : 'bg-[#0D0E17] text-white border-[#2D2D44] hover:border-[#00E5FF]'
+                  ? 'bg-[#27272a] text-white border-[#3f3f46]'
+                  : 'bg-[#18181b] text-zinc-300 border-[#27272a] hover:border-[#3f3f46] hover:text-white'
               }`}
             >
               {isFullFocusActive ? (
                 <>
-                  <Minimize2 size={13} strokeWidth={1.5} />
+                  <Minimize2 size={12} strokeWidth={1.5} />
                   <span>{t.exitFocusModeBtn}</span>
                 </>
               ) : (
                 <>
-                  <Maximize2 size={13} strokeWidth={1.5} />
+                  <Maximize2 size={12} strokeWidth={1.5} />
                   <span>{t.focusModeBtn}</span>
-                </>
-              )}
-            </button>
-          )}
-
-          {onToggleRightDock && (
-            <button
-              type="button"
-              onClick={onToggleRightDock}
-              title="Toggle Right Preflight Dock (Col 03)"
-              className={`h-7 px-2 border font-mono text-[10px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
-                isRightDockCollapsed
-                  ? 'bg-[#5322FF]/30 text-[#00E5FF] border-[#00E5FF]'
-                  : 'bg-[#0D0E17] text-[#8A8FA3] hover:text-white border-[#2D2D44] hover:border-[#00E5FF]'
-              }`}
-            >
-              {isRightDockCollapsed ? (
-                <>
-                  <ChevronLeft size={13} strokeWidth={1.5} />
-                  <span>{t.expandRightBtn}</span>
-                </>
-              ) : (
-                <>
-                  <span>{t.collapseRightBtn}</span>
-                  <ChevronRight size={13} strokeWidth={1.5} />
                 </>
               )}
             </button>
@@ -725,9 +694,9 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
       </div>
 
       {/* Sub-Status Strip: Active Material Physics, Overflow Gatekeeper Status & Live XY */}
-      <div className="h-7 px-3.5 border-b border-[#1F1F2E] bg-[#0D0E17] flex items-center justify-between gap-2 shrink-0 z-10 font-mono text-[10px] text-[#8A8FA3] tabular-nums">
+      <div className="h-7 px-3.5 border-b border-[#27272a] bg-[#09090b] flex items-center justify-between gap-2 shrink-0 z-10 font-mono text-[10px] text-[#71717a] tabular-nums">
         <div className="flex items-center gap-3 truncate">
-          <span className="text-[#00E5FF] font-semibold">
+          <span className="text-zinc-300 font-semibold">
             MAT::{baseSubstrateSpec.shortCode}
           </span>
           <span>
@@ -742,13 +711,13 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
 
         <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
           <span>
-            {t.sheetLabel}: <strong className="text-white">{totalFlatWidthMm.toFixed(0)}</strong> ×{' '}
-            <strong className="text-white">{totalFlatHeightMm.toFixed(0)}</strong> MM
+            {t.sheetLabel}: <strong className="text-zinc-200">{totalFlatWidthMm.toFixed(0)}</strong> ×{' '}
+            <strong className="text-zinc-200">{totalFlatHeightMm.toFixed(0)}</strong> MM
           </span>
-          <span className="text-[#2D2D44]">|</span>
+          <span className="text-[#27272a]">|</span>
           <span>
-            XY: <strong className="text-[#00E5FF]">{cursorMm.x.toFixed(1)}</strong>,{' '}
-            <strong className="text-[#00E5FF]">{cursorMm.y.toFixed(1)}</strong> MM
+            XY: <strong className="text-zinc-300">{cursorMm.x.toFixed(1)}</strong>,{' '}
+            <strong className="text-zinc-300">{cursorMm.y.toFixed(1)}</strong> MM
           </span>
         </div>
       </div>
@@ -757,23 +726,23 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
           AGENT AN EXTERNAL PBR ASSET PACK HOOK DRAWER (Modular Texture Slot)
           ==================================================================== */}
       {showPbrDrawer && (
-        <div className="absolute top-20 right-4 w-96 bg-[#0A0C14] border-2 border-[#00E5FF] z-40 p-3.5 space-y-3">
-          <div className="flex items-center justify-between border-b border-[#1F1F2E] pb-2">
-            <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-[#00E5FF]">
-              <Sliders size={16} strokeWidth={1.25} />
+        <div className="absolute top-20 right-4 w-96 bg-[#09090b] border border-[#27272a] shadow-2xl z-40 p-3.5 space-y-3">
+          <div className="flex items-center justify-between border-b border-[#27272a] pb-2">
+            <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-zinc-100">
+              <Sliders size={15} strokeWidth={1.5} className="text-[#71717a]" />
               <span>[ ⚡ AGENT_AN // PBR_MATERIAL_HOOK ]</span>
             </div>
             <button
               type="button"
               onClick={() => setShowPbrDrawer(false)}
-              className="text-[#8A8FA3] hover:text-white cursor-pointer"
+              className="text-[#71717a] hover:text-white cursor-pointer"
             >
-              <X size={16} strokeWidth={1.25} />
+              <X size={15} strokeWidth={1.5} />
             </button>
           </div>
 
           <div className="space-y-1.5">
-            <div className="font-mono text-[10px] text-[#8A8FA3]">
+            <div className="font-mono text-[10px] text-[#71717a]">
               AGENT AN PROCEDURAL PBR ASSET PACKS:
             </div>
             <div className="grid grid-cols-1 gap-1.5">
@@ -787,12 +756,12 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                   }}
                   className={`px-2.5 py-1.5 border text-left font-mono text-[10px] flex items-center justify-between transition-colors cursor-pointer ${
                     customPbrPack.packName === pack.packName
-                      ? 'bg-[#5322FF]/30 border-[#00E5FF] text-[#00E5FF]'
-                      : 'bg-[#0D0E17] border-[#1F1F2E] text-white hover:border-[#2D2D44]'
+                      ? 'bg-[#27272a] border-[#52525b] text-white'
+                      : 'bg-[#18181b] border-[#27272a] text-zinc-300 hover:border-[#3f3f46]'
                   }`}
                 >
                   <span className="truncate">{pack.packName}</span>
-                  <span className="text-[#8A8FA3] shrink-0 ml-2">
+                  <span className="text-[#71717a] shrink-0 ml-2">
                     R:{pack.roughness} M:{pack.metalness}
                   </span>
                 </button>
@@ -800,8 +769,8 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2 pt-1 border-t border-[#1F1F2E]">
-            <div className="font-mono text-[10px] text-[#00E5FF]">
+          <div className="space-y-2 pt-1 border-t border-[#27272a]">
+            <div className="font-mono text-[10px] text-zinc-300">
               DYNAMIC TEXTURE MAP SLOTS (URL / DATA_URI):
             </div>
             {(
@@ -812,7 +781,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
               ] as const
             ).map((slot) => (
               <div key={slot.key}>
-                <label className="block font-mono text-[9px] text-[#8A8FA3] mb-0.5">
+                <label className="block font-mono text-[9px] text-[#71717a] mb-0.5">
                   {slot.label}
                 </label>
                 <input
@@ -822,17 +791,17 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                     onUpdateCustomPbrPack({ [slot.key]: e.target.value || null })
                   }
                   placeholder="https://... or data:image/svg+xml..."
-                  className="w-full h-6 px-2 bg-[#05050A] border border-[#1F1F2E] focus:border-[#00E5FF] focus:outline-none font-mono text-[10px] text-white"
+                  className="w-full h-6 px-2 bg-[#18181b] border border-[#27272a] focus:border-[#52525b] focus:outline-none font-mono text-[10px] text-zinc-100"
                 />
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-[#1F1F2E] font-mono text-[10px]">
+          <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-[#27272a] font-mono text-[10px]">
             <div>
-              <div className="flex justify-between text-[#8A8FA3] mb-1">
+              <div className="flex justify-between text-[#71717a] mb-1">
                 <span>ROUGHNESS</span>
-                <span className="text-[#00E5FF]">{customPbrPack.roughness.toFixed(2)}</span>
+                <span className="text-zinc-200">{customPbrPack.roughness.toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -843,13 +812,13 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                 onChange={(e) =>
                   onUpdateCustomPbrPack({ roughness: parseFloat(e.target.value) })
                 }
-                className="w-full accent-[#00E5FF]"
+                className="w-full accent-[#5322ff]"
               />
             </div>
             <div>
-              <div className="flex justify-between text-[#8A8FA3] mb-1">
+              <div className="flex justify-between text-[#71717a] mb-1">
                 <span>METALNESS</span>
-                <span className="text-[#00E5FF]">{customPbrPack.metalness.toFixed(2)}</span>
+                <span className="text-zinc-200">{customPbrPack.metalness.toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -860,7 +829,7 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
                 onChange={(e) =>
                   onUpdateCustomPbrPack({ metalness: parseFloat(e.target.value) })
                 }
-                className="w-full accent-[#00E5FF]"
+                className="w-full accent-[#5322ff]"
               />
             </div>
           </div>
@@ -1848,6 +1817,8 @@ export const PackagingViewport: React.FC<PackagingViewportProps> = ({
           ==================================================================== */}
       <ShowcaseRecorderBar
         lang={lang}
+        viewMode={viewMode}
+        onEnter3DMode={() => setViewMode('3D_FOLDED')}
         foldPercent={foldPercent}
         onFoldPercentChange={handleManualFoldPercentChange}
         choreographyStatus={choreographyStatus}

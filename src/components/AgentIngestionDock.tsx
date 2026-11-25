@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Edit3,
   Lock,
@@ -50,6 +51,7 @@ interface AgentIngestionDockProps {
   onTriggerVectorCraft: () => void;
   isVectorCraftRunning: boolean;
   vectorCraftLog: string | null;
+  onCollapse?: () => void;
 }
 
 type AccordionKey = 'structure' | 'specs' | 'ksp';
@@ -69,15 +71,16 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
   onTriggerVectorCraft,
   isVectorCraftRunning,
   vectorCraftLog,
+  onCollapse,
 }) => {
   const fullT = getTranslation(lang);
   const t = fullT.col1;
 
-  // Collapsible Accordion state memory
+  // Collapsible Accordion state memory: 01.A compact preview open; 01.B & 01.C collapsed by default
   const [expanded, setExpanded] = useState<Record<AccordionKey, boolean>>({
     structure: true,
-    specs: true,
-    ksp: true,
+    specs: false,
+    ksp: false,
   });
 
   // Read-only inspector lock for 01.A Base Structure
@@ -146,157 +149,162 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
   };
 
   return (
-    <aside className="w-[385px] shrink-0 h-full bg-[#0A0C14] border-r border-[#1F1F2E] flex flex-col select-none">
+    <aside className="w-[320px] shrink-0 h-full bg-[#09090b] border-r border-[#27272a] flex flex-col select-none">
       {/* Column 1 Header */}
-      <div className="h-10 px-3.5 border-b border-[#1F1F2E] bg-[#0D0E17] flex items-center justify-between shrink-0">
+      <div className="h-10 px-3 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <Sliders size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
-          <span className="font-mono text-xs font-semibold tracking-wider text-white truncate">
+          <Sliders size={14} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
+          <span className="font-mono text-[11px] font-semibold tracking-wider text-zinc-100 truncate">
             {t.header}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            const allOpen = expanded.structure && expanded.specs && expanded.ksp;
-            setExpanded({
-              structure: !allOpen,
-              specs: !allOpen,
-              ksp: !allOpen,
-            });
-          }}
-          className="px-1.5 py-0.5 bg-[#05050A] border border-[#1F1F2E] hover:border-[#00E5FF] font-mono text-[10px] text-[#8A8FA3] hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          {expanded.structure && expanded.specs && expanded.ksp ? '[-ALL]' : '[+ALL]'}
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              const allOpen = expanded.structure && expanded.specs && expanded.ksp;
+              setExpanded({
+                structure: !allOpen,
+                specs: !allOpen,
+                ksp: !allOpen,
+              });
+            }}
+            className="px-1.5 py-0.5 bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] font-mono text-[10px] text-[#71717a] hover:text-zinc-200 transition-colors whitespace-nowrap cursor-pointer"
+          >
+            {expanded.structure && expanded.specs && expanded.ksp ? '[-ALL]' : '[+ALL]'}
+          </button>
+          {onCollapse && (
+            <button
+              type="button"
+              onClick={onCollapse}
+              title="Collapse to Icon Drawer"
+              className="w-6 h-6 bg-[#09090b] hover:bg-[#27272a] border border-[#27272a] text-[#71717a] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={13} strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Top Ingestion Telemetry Banner & Load Contract Action */}
-      <div className="p-3 bg-[#05050A] border-b border-[#1F1F2E] space-y-2 shrink-0">
+      <div className="p-3 bg-[#09090b] border-b border-[#27272a] space-y-2 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 bg-[#10B981] inline-block shrink-0" />
-            <span className="font-mono text-[10px] font-semibold text-[#10B981] truncate">
+            <span className="w-1.5 h-1.5 bg-[#10B981] inline-block shrink-0" />
+            <span className="font-mono text-[10px] font-medium text-zinc-300 truncate">
               {t.ingestionBanner}
             </span>
           </div>
-          <span className="font-mono text-[10px] text-[#8A8FA3] tabular-nums shrink-0">
+          <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0">
             {ingestionMeta.ingestedAt}
           </span>
         </div>
 
-        <div className="flex items-center justify-between font-mono text-[10px] text-[#8A8FA3] tabular-nums">
+        <div className="flex items-center justify-between font-mono text-[10px] text-[#71717a] tabular-nums">
           <span>BATCH: {ingestionMeta.batchId}</span>
-          <span className="text-[#00E5FF]">OVERRIDES: {ingestionMeta.overrideCount}</span>
+          <span className="text-zinc-300">OVERRIDES: {ingestionMeta.overrideCount}</span>
         </div>
 
         <button
           type="button"
           onClick={onOpenLoadContractModal}
-          className="w-full h-8 px-3 bg-[#0D0E17] hover:bg-[#00E5FF] text-[#00E5FF] hover:text-[#05050A] border border-[#00E5FF] font-mono text-[11px] font-bold tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+          className="w-full h-8 px-3 bg-[#18181b] hover:bg-[#27272a] text-zinc-200 hover:text-white border border-[#27272a] hover:border-[#3f3f46] font-mono text-[11px] font-medium tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
         >
-          <Upload size={16} strokeWidth={1.25} />
+          <Upload size={14} strokeWidth={1.5} className="text-[#71717a]" />
           <span>{t.loadNewContractBtn}</span>
         </button>
       </div>
 
       {/* Scrollable Accordion Stack */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#1F1F2E]">
+      <div className="flex-1 overflow-y-auto divide-y divide-[#27272a]">
         {/* ====================================================================
-            ACCORDION 01.A: [ ▾ 01.A // BASE_STRUCTURE_INSPECTOR ]
+            ACCORDION 01.A: [ ▾ 01.A // BASE_STRUCTURE_INSPECTOR ] (Compact 2-Line Preview)
             ==================================================================== */}
-        <section className="bg-[#0A0C14]">
+        <section className="bg-[#09090b]">
           <button
             type="button"
             onClick={() => toggleSection('structure')}
-            className={`w-full h-9 px-3.5 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
+            className={`w-full h-9 px-3 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
               expanded.structure
-                ? 'bg-[#0D0E17] text-[#00E5FF] border-b border-[#1F1F2E]'
-                : 'bg-[#0A0C14] text-white hover:bg-[#0D0E17]'
+                ? 'bg-[#18181b] text-zinc-100 border-b border-[#27272a]'
+                : 'bg-[#09090b] text-zinc-300 hover:bg-[#18181b]'
             }`}
           >
             <div className="flex items-center gap-1.5 truncate">
               {expanded.structure ? (
-                <ChevronDown size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
+                <ChevronDown size={14} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               ) : (
-                <ChevronRight size={16} strokeWidth={1.25} className="text-[#8A8FA3] shrink-0" />
+                <ChevronRight size={14} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
               )}
               <span className="truncate">
                 [ {expanded.structure ? '▾' : '▸'} {t.accStructure} ]
               </span>
             </div>
-            <span className="font-mono text-[10px] text-[#8A8FA3] tabular-nums shrink-0 ml-2">
+            <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 ml-2">
               {contract.product.dimensions.length_mm}×{contract.product.dimensions.width_mm}×
               {contract.product.dimensions.height_mm}
             </span>
           </button>
 
           {expanded.structure && (
-            <div className="p-3.5 space-y-2.5">
-              {/* Inspector Header Bar with [ Quick Edit ] Toggle */}
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] text-[#8A8FA3] flex items-center gap-1">
-                  {isStructureQuickEdit ? (
-                    <>
-                      <Edit3 size={13} strokeWidth={1.25} className="text-[#00E5FF]" />
-                      <span className="text-[#00E5FF]">{t.editingTag}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={13} strokeWidth={1.25} className="text-[#8A8FA3]" />
-                      <span>{t.readOnlyTag}</span>
-                    </>
-                  )}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsStructureQuickEdit((v) => !v)}
-                  className={`px-2 py-0.5 border font-mono text-[10px] transition-colors cursor-pointer whitespace-nowrap ${
-                    isStructureQuickEdit
-                      ? 'bg-[#00E5FF] text-[#05050A] border-[#00E5FF] font-semibold'
-                      : 'bg-[#0D0E17] text-[#00E5FF] border-[#2D2D44] hover:border-[#00E5FF]'
-                  }`}
-                >
-                  {isStructureQuickEdit ? t.lockReadOnlyBtn : t.quickEditBtn}
-                </button>
-              </div>
-
-              {/* Read-Only Overview vs Quick Edit Inputs */}
+            <div className="p-3 space-y-2">
+              {/* Compact 2-Line Preview vs Quick Edit Form */}
               {!isStructureQuickEdit ? (
-                <div className="bg-[#05050A] border border-[#1F1F2E] divide-y divide-[#1F1F2E] font-mono text-xs">
-                  <div className="px-2.5 py-2 flex items-center justify-between">
-                    <span className="text-[10px] text-[#8A8FA3]">{t.modelId}</span>
-                    <span className="text-white font-semibold tabular-nums">
-                      {contract.product.model}
-                    </span>
+                <div className="bg-[#18181b] border border-[#27272a] px-2.5 py-2 space-y-1.5 font-mono">
+                  {/* Line 1: Brand // Model + Quick Edit Toggle */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 text-xs">
+                      <span className="text-zinc-100 font-semibold truncate">
+                        {contract.product.brand}
+                      </span>
+                      <span className="text-[#71717a]">/</span>
+                      <span className="text-zinc-300 tabular-nums shrink-0">
+                        {contract.product.model}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsStructureQuickEdit(true)}
+                      className="px-1.5 py-0.5 bg-[#09090b] hover:bg-[#27272a] border border-[#27272a] hover:border-[#3f3f46] text-[10px] text-zinc-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Edit3 size={10} strokeWidth={1.5} />
+                      <span>{t.quickEditBtn}</span>
+                    </button>
                   </div>
-                  <div className="px-2.5 py-2 flex items-center justify-between">
-                    <span className="text-[10px] text-[#8A8FA3]">{t.brandEntity}</span>
-                    <span className="text-[#00E5FF] font-semibold">
-                      {contract.product.brand}
-                    </span>
-                  </div>
-                  <div className="px-2.5 py-2 flex items-center justify-between gap-3">
-                    <span className="text-[10px] text-[#8A8FA3] shrink-0">{t.categoryDesc}</span>
-                    <span className="text-white text-[11px] truncate">
-                      {contract.product.category}
-                    </span>
-                  </div>
-                  <div className="px-2.5 py-2 flex items-center justify-between">
-                    <span className="text-[10px] text-[#8A8FA3]">L × W × H (BLEED)</span>
-                    <span className="text-[#10B981] tabular-nums">
-                      {contract.product.dimensions.length_mm} ×{' '}
-                      {contract.product.dimensions.width_mm} ×{' '}
+
+                  {/* Line 2: Dimensions + Category */}
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-[#71717a] tabular-nums">
+                    <span className="text-zinc-300 shrink-0">
+                      {contract.product.dimensions.length_mm}×
+                      {contract.product.dimensions.width_mm}×
                       {contract.product.dimensions.height_mm} mm (+
-                      {contract.product.dimensions.bleed_mm.toFixed(1)}mm)
+                      {contract.product.dimensions.bleed_mm.toFixed(1)})
+                    </span>
+                    <span className="truncate text-right" title={contract.product.category}>
+                      {contract.product.category}
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2.5 bg-[#05050A] border border-[#00E5FF] p-2.5">
+                <div className="space-y-2.5 bg-[#18181b] border border-[#3f3f46] p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] text-zinc-300 flex items-center gap-1">
+                      <Edit3 size={12} strokeWidth={1.5} className="text-[#71717a]" />
+                      <span>{t.editingTag}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsStructureQuickEdit(false)}
+                      className="px-2 py-0.5 bg-[#09090b] hover:bg-[#27272a] border border-[#27272a] font-mono text-[10px] text-zinc-200 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Lock size={10} strokeWidth={1.5} />
+                      <span>{t.lockReadOnlyBtn}</span>
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <div className="flex items-center justify-between font-mono text-[9px] text-[#8A8FA3] mb-1">
+                      <div className="flex items-center justify-between font-mono text-[9px] text-[#71717a] mb-1">
                         <span>{t.modelId}</span>
                         <span>
                           {contract.product.model.length}/{OVERFLOW_THRESHOLDS.modelMaxChars}
@@ -306,15 +314,15 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                         type="text"
                         value={contract.product.model}
                         onChange={(e) => onUpdateProductField('model', e.target.value)}
-                        className={`w-full h-7 px-2 bg-[#0D0E17] border focus:outline-none font-mono text-xs text-white tabular-nums ${
+                        className={`w-full h-7 px-2 bg-[#09090b] border focus:outline-none font-mono text-xs text-white tabular-nums ${
                           isModelOverflow
                             ? 'border-[#EF4444]'
-                            : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                            : 'border-[#27272a] focus:border-[#52525b]'
                         }`}
                       />
                     </div>
                     <div>
-                      <div className="flex items-center justify-between font-mono text-[9px] text-[#8A8FA3] mb-1">
+                      <div className="flex items-center justify-between font-mono text-[9px] text-[#71717a] mb-1">
                         <span>{t.brandEntity}</span>
                         <span>
                           {contract.product.brand.length}/{OVERFLOW_THRESHOLDS.brandMaxChars}
@@ -324,17 +332,17 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                         type="text"
                         value={contract.product.brand}
                         onChange={(e) => onUpdateProductField('brand', e.target.value)}
-                        className={`w-full h-7 px-2 bg-[#0D0E17] border focus:outline-none font-mono text-xs text-white ${
+                        className={`w-full h-7 px-2 bg-[#09090b] border focus:outline-none font-mono text-xs text-white ${
                           isBrandOverflow
                             ? 'border-[#EF4444]'
-                            : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                            : 'border-[#27272a] focus:border-[#52525b]'
                         }`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between font-mono text-[9px] text-[#8A8FA3] mb-1">
+                    <div className="flex items-center justify-between font-mono text-[9px] text-[#71717a] mb-1">
                       <span>{t.categoryDesc}</span>
                       <span>
                         {contract.product.category.length}/{OVERFLOW_THRESHOLDS.categoryMaxChars}
@@ -344,17 +352,17 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                       type="text"
                       value={contract.product.category}
                       onChange={(e) => onUpdateProductField('category', e.target.value)}
-                      className={`w-full h-7 px-2 bg-[#0D0E17] border focus:outline-none text-xs text-white ${
+                      className={`w-full h-7 px-2 bg-[#09090b] border focus:outline-none text-xs text-white ${
                         isCategoryOverflow
                           ? 'border-[#EF4444]'
-                          : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                          : 'border-[#27272a] focus:border-[#52525b]'
                       }`}
                     />
                   </div>
 
                   {/* Structural Geometry Matrix (L, W, H, Bleed) */}
                   <div>
-                    <div className="font-mono text-[9px] text-[#8A8FA3] mb-1">
+                    <div className="font-mono text-[9px] text-[#71717a] mb-1">
                       {t.dielineGeometry}
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
@@ -366,8 +374,8 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                           { key: 'bleed_mm', code: 'BLEED', min: 0, max: 15, step: 0.5 },
                         ] as const
                       ).map((dim) => (
-                        <div key={dim.key} className="bg-[#0D0E17] border border-[#1F1F2E] p-1">
-                          <div className="font-mono text-[8px] text-[#8A8FA3] mb-0.5">
+                        <div key={dim.key} className="bg-[#09090b] border border-[#27272a] p-1">
+                          <div className="font-mono text-[8px] text-[#71717a] mb-0.5">
                             {dim.code}
                           </div>
                           <input
@@ -382,7 +390,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                                 onUpdateDimension(dim.key, Math.max(0, val));
                               }
                             }}
-                            className="w-full bg-[#05050A] border border-[#1F1F2E] focus:border-[#00E5FF] focus:outline-none px-1 py-0.5 font-mono text-xs text-white tabular-nums text-right"
+                            className="w-full bg-[#18181b] border border-[#27272a] focus:border-[#52525b] focus:outline-none px-1 py-0.5 font-mono text-xs text-white tabular-nums text-right"
                           />
                         </div>
                       ))}
@@ -393,7 +401,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
 
               {/* Text Overflow Gatekeeper Alert for Section 01.A */}
               {(isModelOverflow || isBrandOverflow || isCategoryOverflow) && (
-                <div className="px-2 py-1.5 bg-[#05050A] border border-[#EF4444] font-mono text-[10px] text-[#EF4444] font-semibold flex items-center justify-between">
+                <div className="px-2 py-1.5 bg-[#09090b] border border-[#EF4444] font-mono text-[10px] text-[#EF4444] font-semibold flex items-center justify-between">
                   <span>{fullT.overflowBadge}</span>
                 </div>
               )}
@@ -402,38 +410,38 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
         </section>
 
         {/* ====================================================================
-            ACCORDION 01.B: [ ▸ 01.B // TECHNICAL_SPECS_OVERRIDE ]
+            ACCORDION 01.B: [ ▸ 01.B // TECHNICAL_SPECS_OVERRIDE ] (Collapsed by default)
             ==================================================================== */}
-        <section className="bg-[#0A0C14]">
+        <section className="bg-[#09090b]">
           <button
             type="button"
             onClick={() => toggleSection('specs')}
-            className={`w-full h-9 px-3.5 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
+            className={`w-full h-9 px-3 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
               expanded.specs
-                ? 'bg-[#0D0E17] text-[#00E5FF] border-b border-[#1F1F2E]'
-                : 'bg-[#0A0C14] text-white hover:bg-[#0D0E17]'
+                ? 'bg-[#18181b] text-zinc-100 border-b border-[#27272a]'
+                : 'bg-[#09090b] text-zinc-300 hover:bg-[#18181b] hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5 truncate">
               {expanded.specs ? (
-                <ChevronDown size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
+                <ChevronDown size={14} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               ) : (
-                <ChevronRight size={16} strokeWidth={1.25} className="text-[#8A8FA3] shrink-0" />
+                <ChevronRight size={14} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
               )}
               <span className="truncate">
                 [ {expanded.specs ? '▾' : '▸'} {t.accSpecs} ]
               </span>
             </div>
-            <span className="font-mono text-[10px] text-[#8A8FA3] tabular-nums shrink-0 ml-2">
+            <span className="font-mono text-[10px] text-[#71717a] tabular-nums shrink-0 ml-2">
               [{contract.technicalSpecs.length + contract.dynamicSpecs.length}]
             </span>
           </button>
 
           {expanded.specs && (
-            <div className="p-3.5 space-y-2.5">
-              <div className="font-mono text-[9px] text-[#8A8FA3] flex items-center justify-between">
+            <div className="p-3 space-y-2.5">
+              <div className="font-mono text-[9px] text-[#71717a] flex items-center justify-between">
                 <span>{t.clickToOverrideHint}</span>
-                <span className="text-[#00E5FF]">MAX:{OVERFLOW_THRESHOLDS.specValueMaxChars}CH</span>
+                <span className="text-zinc-400">MAX:{OVERFLOW_THRESHOLDS.specValueMaxChars}CH</span>
               </div>
 
               {/* Mandatory Technical Specs (Click value for quick inline edit) */}
@@ -450,19 +458,19 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                   return (
                     <div
                       key={spec.id}
-                      className={`bg-[#0D0E17] border p-2 space-y-1.5 transition-colors ${
+                      className={`bg-[#18181b] border p-2 space-y-1.5 transition-colors ${
                         hasOverflow
                           ? 'border-[#EF4444]'
                           : isEditingThis
-                          ? 'border-[#00E5FF]'
-                          : 'border-[#1F1F2E] hover:border-[#2D2D44]'
+                          ? 'border-[#52525b]'
+                          : 'border-[#27272a] hover:border-[#3f3f46]'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[10px] text-[#00E5FF] font-semibold truncate">
+                        <span className="font-mono text-[10px] text-zinc-200 font-semibold truncate">
                           {getLocalizedSpecTitle(spec.id, spec.label)}
                         </span>
-                        <span className="font-mono text-[9px] text-[#8A8FA3] tabular-nums shrink-0">
+                        <span className="font-mono text-[9px] text-[#71717a] tabular-nums shrink-0">
                           {spec.value.length}/{maxAllowed}CH
                         </span>
                       </div>
@@ -475,7 +483,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                           onFocus={() => setEditingSpecId(spec.id)}
                           onBlur={() => setEditingSpecId(null)}
                           onChange={(e) => onUpdateTechSpec(spec.id, 'label', e.target.value)}
-                          className="col-span-5 h-7 px-2 bg-[#05050A] border border-[#1F1F2E] focus:border-[#00E5FF] focus:outline-none font-mono text-[11px] text-[#8A8FA3] focus:text-white"
+                          className="col-span-5 h-7 px-2 bg-[#09090b] border border-[#27272a] focus:border-[#52525b] focus:outline-none font-mono text-[11px] text-[#71717a] focus:text-white"
                         />
                         <input
                           type="text"
@@ -483,17 +491,17 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                           onFocus={() => setEditingSpecId(spec.id)}
                           onBlur={() => setEditingSpecId(null)}
                           onChange={(e) => onUpdateTechSpec(spec.id, 'value', e.target.value)}
-                          className={`col-span-7 h-7 px-2 bg-[#05050A] border focus:outline-none font-mono text-xs text-white tabular-nums ${
+                          className={`col-span-7 h-7 px-2 bg-[#09090b] border focus:outline-none font-mono text-xs text-white tabular-nums ${
                             isValueOverflow
                               ? 'border-[#EF4444] text-[#EF4444]'
-                              : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                              : 'border-[#27272a] focus:border-[#52525b]'
                           }`}
                         />
                       </div>
 
                       {/* Text Overflow Gatekeeper Warning Badge */}
                       {hasOverflow && (
-                        <div className="px-2 py-1 bg-[#05050A] border border-[#EF4444] font-mono text-[9px] text-[#EF4444] font-bold">
+                        <div className="px-2 py-1 bg-[#09090b] border border-[#EF4444] font-mono text-[9px] text-[#EF4444] font-bold">
                           {fullT.overflowBadge}
                         </div>
                       )}
@@ -503,13 +511,13 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                         <div className="pt-0.5 flex items-center justify-between text-[10px] font-mono">
                           {eanAudit.isChecksumMatch ? (
                             <span className="text-[#10B981] flex items-center gap-1">
-                              <CheckCircle2 size={13} strokeWidth={1.25} />
+                              <CheckCircle2 size={12} strokeWidth={1.5} />
                               {t.eanChecksumPass} (CHK:{eanAudit.actualCheckDigit})
                             </span>
                           ) : (
                             <div className="flex items-center justify-between w-full gap-2">
                               <span className="text-[#EF4444] flex items-center gap-1">
-                                <AlertTriangle size={13} strokeWidth={1.25} />
+                                <AlertTriangle size={12} strokeWidth={1.5} />
                                 {eanAudit.expectedCheckDigit !== null
                                   ? `CHK -> ${eanAudit.expectedCheckDigit}`
                                   : '13 DIGITS REQ'}
@@ -524,7 +532,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                                       `${eanAudit.cleaned.slice(0, 12)}${eanAudit.expectedCheckDigit}`
                                     )
                                   }
-                                  className="px-1.5 py-0.5 bg-[#05050A] border border-[#00E5FF] text-[#00E5FF] hover:bg-[#00E5FF] hover:text-[#05050A] transition-colors text-[9px] whitespace-nowrap shrink-0 cursor-pointer"
+                                  className="px-1.5 py-0.5 bg-[#09090b] border border-[#3f3f46] text-zinc-200 hover:bg-[#27272a] hover:text-white transition-colors text-[9px] whitespace-nowrap shrink-0 cursor-pointer"
                                 >
                                   {t.fixDigitBtn}
                                 </button>
@@ -540,10 +548,10 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
 
               {/* Dynamic Extension Specs Header */}
               <div className="pt-1 flex items-center justify-between">
-                <span className="font-mono text-[10px] text-[#8A8FA3]">
+                <span className="font-mono text-[10px] text-[#71717a]">
                   {t.dynamicSpecsHeader}
                 </span>
-                <span className="font-mono text-[10px] text-[#8A8FA3] tabular-nums">
+                <span className="font-mono text-[10px] text-[#71717a] tabular-nums">
                   [{contract.dynamicSpecs.length}]
                 </span>
               </div>
@@ -560,10 +568,10 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                   return (
                     <div
                       key={dSpec.id}
-                      className={`bg-[#0D0E17] border p-2 space-y-1.5 transition-colors ${
+                      className={`bg-[#18181b] border p-2 space-y-1.5 transition-colors ${
                         hasOverflow
                           ? 'border-[#EF4444]'
-                          : 'border-[#1F1F2E] hover:border-[#2D2D44]'
+                          : 'border-[#27272a] hover:border-[#3f3f46]'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -573,17 +581,17 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                           onChange={(e) =>
                             onUpdateDynamicSpec(dSpec.id, 'label', e.target.value)
                           }
-                          className="bg-transparent font-mono text-[10px] text-[#8A8FA3] focus:text-white focus:outline-none w-full"
+                          className="bg-transparent font-mono text-[10px] text-[#71717a] focus:text-white focus:outline-none w-full"
                         />
-                        <span className="font-mono text-[9px] text-[#8A8FA3] tabular-nums shrink-0">
+                        <span className="font-mono text-[9px] text-[#71717a] tabular-nums shrink-0">
                           {dSpec.value.length}/{maxAllowed}
                         </span>
                         <button
                           type="button"
                           onClick={() => onRemoveDynamicSpec(dSpec.id)}
-                          className="text-[#8A8FA3] hover:text-[#EF4444] transition-colors p-0.5 shrink-0 cursor-pointer"
+                          className="text-[#71717a] hover:text-[#EF4444] transition-colors p-0.5 shrink-0 cursor-pointer"
                         >
-                          <Trash2 size={13} strokeWidth={1.25} />
+                          <Trash2 size={13} strokeWidth={1.5} />
                         </button>
                       </div>
                       <input
@@ -592,14 +600,14 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                         onChange={(e) =>
                           onUpdateDynamicSpec(dSpec.id, 'value', e.target.value)
                         }
-                        className={`w-full h-7 px-2 bg-[#05050A] border focus:outline-none font-mono text-xs text-white tabular-nums ${
+                        className={`w-full h-7 px-2 bg-[#09090b] border focus:outline-none font-mono text-xs text-white tabular-nums ${
                           isValOverflow
                             ? 'border-[#EF4444]'
-                            : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                            : 'border-[#27272a] focus:border-[#52525b]'
                         }`}
                       />
                       {hasOverflow && (
-                        <div className="px-2 py-1 bg-[#05050A] border border-[#EF4444] font-mono text-[9px] text-[#EF4444] font-bold">
+                        <div className="px-2 py-1 bg-[#09090b] border border-[#EF4444] font-mono text-[9px] text-[#EF4444] font-bold">
                           {fullT.overflowBadge}
                         </div>
                       )}
@@ -612,7 +620,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
               {showAddSpecForm ? (
                 <form
                   onSubmit={handleConfirmAddSpec}
-                  className="bg-[#0D0E17] border border-[#00E5FF] p-2.5 space-y-2"
+                  className="bg-[#18181b] border border-[#3f3f46] p-2.5 space-y-2"
                 >
                   <div className="grid grid-cols-2 gap-1.5">
                     <input
@@ -621,27 +629,27 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                       onChange={(e) => setNewSpecLabel(e.target.value)}
                       placeholder="Label"
                       autoFocus
-                      className="h-7 px-2 bg-[#05050A] border border-[#1F1F2E] focus:border-[#00E5FF] focus:outline-none font-mono text-xs text-white"
+                      className="h-7 px-2 bg-[#09090b] border border-[#27272a] focus:border-[#52525b] focus:outline-none font-mono text-xs text-white"
                     />
                     <input
                       type="text"
                       value={newSpecValue}
                       onChange={(e) => setNewSpecValue(e.target.value)}
                       placeholder="Value"
-                      className="h-7 px-2 bg-[#05050A] border border-[#1F1F2E] focus:border-[#00E5FF] focus:outline-none font-mono text-xs text-white"
+                      className="h-7 px-2 bg-[#09090b] border border-[#27272a] focus:border-[#52525b] focus:outline-none font-mono text-xs text-white"
                     />
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       type="submit"
-                      className="flex-1 h-7 bg-[#00E5FF] text-[#05050A] font-mono text-[11px] font-semibold hover:bg-white transition-colors whitespace-nowrap cursor-pointer"
+                      className="flex-1 h-7 bg-zinc-100 hover:bg-white text-[#09090b] font-mono text-[11px] font-semibold transition-colors whitespace-nowrap cursor-pointer"
                     >
                       {t.commitFieldBtn}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowAddSpecForm(false)}
-                      className="px-2.5 h-7 bg-[#05050A] border border-[#1F1F2E] text-[#8A8FA3] hover:text-white font-mono text-[11px] whitespace-nowrap cursor-pointer"
+                      className="px-2.5 h-7 bg-[#09090b] border border-[#27272a] text-[#71717a] hover:text-white font-mono text-[11px] whitespace-nowrap cursor-pointer"
                     >
                       {t.cancelBtn}
                     </button>
@@ -651,9 +659,9 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddSpecForm(true)}
-                  className="w-full h-8 bg-[#0D0E17] border border-[#2D2D44] hover:border-[#00E5FF] text-[#00E5FF] font-mono text-xs flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer"
+                  className="w-full h-8 bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] hover:border-[#3f3f46] text-zinc-300 hover:text-white font-mono text-xs flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer"
                 >
-                  <Plus size={15} strokeWidth={1.25} />
+                  <Plus size={14} strokeWidth={1.5} />
                   <span>{t.addOverrideSpecBtn}</span>
                 </button>
               )}
@@ -662,23 +670,23 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
         </section>
 
         {/* ====================================================================
-            ACCORDION 01.C: [ ▸ 01.C // KSP_ICON_ASSETS_VIEWER ]
+            ACCORDION 01.C: [ ▸ 01.C // KSP_ICON_ASSETS_VIEWER ] (Collapsed by default)
             ==================================================================== */}
-        <section className="bg-[#0A0C14]">
+        <section className="bg-[#09090b]">
           <button
             type="button"
             onClick={() => toggleSection('ksp')}
-            className={`w-full h-9 px-3.5 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
+            className={`w-full h-9 px-3 flex items-center justify-between text-left font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
               expanded.ksp
-                ? 'bg-[#0D0E17] text-[#00E5FF] border-b border-[#1F1F2E]'
-                : 'bg-[#0A0C14] text-white hover:bg-[#0D0E17]'
+                ? 'bg-[#18181b] text-zinc-100 border-b border-[#27272a]'
+                : 'bg-[#09090b] text-zinc-300 hover:bg-[#18181b] hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5 truncate">
               {expanded.ksp ? (
-                <ChevronDown size={16} strokeWidth={1.25} className="text-[#00E5FF] shrink-0" />
+                <ChevronDown size={14} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               ) : (
-                <ChevronRight size={16} strokeWidth={1.25} className="text-[#8A8FA3] shrink-0" />
+                <ChevronRight size={14} strokeWidth={1.5} className="text-[#71717a] shrink-0" />
               )}
               <span className="truncate">
                 [ {expanded.ksp ? '▾' : '▸'} {t.accKsp} ]
@@ -686,7 +694,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
             </div>
             <span
               className={`font-mono text-[10px] tabular-nums shrink-0 ml-2 ${
-                pendingKspCount > 0 ? 'text-[#5322FF] font-bold' : 'text-[#10B981]'
+                pendingKspCount > 0 ? 'text-zinc-300 font-semibold' : 'text-[#10B981]'
               }`}
             >
               {contract.keySellingPoints.length - pendingKspCount}/
@@ -695,7 +703,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
           </button>
 
           {expanded.ksp && (
-            <div className="p-3.5 space-y-2.5">
+            <div className="p-3 space-y-2.5">
               {/* KSP Vector Cards */}
               <div className="space-y-2.5">
                 {contract.keySellingPoints.map((ksp, idx) => {
@@ -710,14 +718,12 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                   return (
                     <div
                       key={ksp.id}
-                      className={`bg-[#0D0E17] border p-2.5 space-y-2 transition-colors ${
+                      className={`bg-[#18181b] border p-2.5 space-y-2 transition-colors ${
                         hasKspOverflow
                           ? 'border-[#EF4444]'
                           : isEditingThisKsp
-                          ? 'border-[#00E5FF]'
-                          : isReady
-                          ? 'border-[#1F1F2E] hover:border-[#2D2D44]'
-                          : 'border-[#5322FF]'
+                          ? 'border-[#52525b]'
+                          : 'border-[#27272a] hover:border-[#3f3f46]'
                       }`}
                     >
                       <div className="flex items-start gap-2.5">
@@ -726,21 +732,17 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                           type="button"
                           onClick={() => handleCycleKspVector(ksp.id, ksp.iconSvg)}
                           title="Click to cycle or synthesize KSP Vector SVG"
-                          className={`w-12 h-12 shrink-0 border flex flex-col items-center justify-center relative transition-colors cursor-pointer ${
-                            isReady
-                              ? 'bg-[#05050A] border-[#2D2D44] text-[#00E5FF] hover:border-[#00E5FF]'
-                              : 'bg-[#05050A] border-[#5322FF] text-[#8A8FA3] hover:border-[#00E5FF]'
-                          }`}
+                          className="w-11 h-11 shrink-0 bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] text-zinc-200 flex flex-col items-center justify-center relative transition-colors cursor-pointer"
                         >
                           {ksp.iconSvg ? (
                             <div
-                              className="w-8 h-8 text-[#00E5FF]"
+                              className="w-7 h-7 text-zinc-200"
                               dangerouslySetInnerHTML={{ __html: ksp.iconSvg }}
                             />
                           ) : (
-                            <div className="flex flex-col items-center justify-center text-[8px] font-mono text-[#8A8FA3] leading-tight">
+                            <div className="flex flex-col items-center justify-center text-[8px] font-mono text-[#71717a] leading-tight">
                               <span>NO_SVG</span>
-                              <span className="text-[#5322FF]">AGENT</span>
+                              <span className="text-zinc-400">AGENT</span>
                             </div>
                           )}
                         </button>
@@ -748,15 +750,15 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                         {/* KSP Metadata & Inline Override Fields */}
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-center justify-between gap-1.5">
-                            <span className="font-mono text-[10px] text-[#8A8FA3] tabular-nums">
+                            <span className="font-mono text-[10px] text-[#71717a] tabular-nums">
                               ASSET_0{idx + 1}
                             </span>
                             {isReady ? (
-                              <span className="px-1.5 py-0.5 bg-[#05050A] border border-[#10B981] text-[#10B981] font-mono text-[9px] font-semibold tracking-wider whitespace-nowrap">
+                              <span className="px-1.5 py-0.5 bg-[#06b6d4]/10 border border-[#06b6d4]/60 text-[#00f0ff] font-mono text-[9px] font-semibold tracking-wider whitespace-nowrap">
                                 {t.verifiedVectorBadge}
                               </span>
                             ) : (
-                              <span className="px-1.5 py-0.5 bg-[#5322FF]/20 border border-[#5322FF] text-white font-mono text-[9px] font-semibold tracking-wider whitespace-nowrap">
+                              <span className="px-1.5 py-0.5 bg-[#09090b] border border-[#27272a] text-[#71717a] font-mono text-[9px] font-semibold tracking-wider whitespace-nowrap">
                                 {t.pendingVectorBadge}
                               </span>
                             )}
@@ -768,10 +770,10 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                             onFocus={() => setEditingKspId(ksp.id)}
                             onBlur={() => setEditingKspId(null)}
                             onChange={(e) => onUpdateKsp(ksp.id, { title: e.target.value })}
-                            className={`w-full h-6 px-1.5 bg-[#05050A] border focus:outline-none text-xs font-medium text-white ${
+                            className={`w-full h-6 px-1.5 bg-[#09090b] border focus:outline-none text-xs font-medium text-white ${
                               isTitleOverflow
                                 ? 'border-[#EF4444]'
-                                : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                                : 'border-[#27272a] focus:border-[#52525b]'
                             }`}
                           />
                           <input
@@ -782,10 +784,10 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                             onChange={(e) =>
                               onUpdateKsp(ksp.id, { description: e.target.value })
                             }
-                            className={`w-full h-6 px-1.5 bg-[#05050A] border focus:outline-none text-[11px] text-[#8A8FA3] focus:text-white ${
+                            className={`w-full h-6 px-1.5 bg-[#09090b] border focus:outline-none text-[11px] text-[#71717a] focus:text-white ${
                               isDescOverflow
                                 ? 'border-[#EF4444]'
-                                : 'border-[#1F1F2E] focus:border-[#00E5FF]'
+                                : 'border-[#27272a] focus:border-[#52525b]'
                             }`}
                           />
                         </div>
@@ -793,7 +795,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
 
                       {/* Text Overflow Gatekeeper Badge for KSP */}
                       {hasKspOverflow && (
-                        <div className="px-2 py-1 bg-[#05050A] border border-[#EF4444] font-mono text-[9px] text-[#EF4444] font-bold">
+                        <div className="px-2 py-1 bg-[#09090b] border border-[#EF4444] font-mono text-[9px] text-[#EF4444] font-bold">
                           {fullT.overflowBadge} ({ksp.title.length}/
                           {OVERFLOW_THRESHOLDS.kspTitleMaxChars} | {ksp.description.length}/
                           {OVERFLOW_THRESHOLDS.kspDescriptionMaxChars})
@@ -801,7 +803,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                       )}
 
                       {/* Vector Path Telemetry Row */}
-                      <div className="pt-1 border-t border-[#1F1F2E] flex items-center justify-between font-mono text-[9px] text-[#8A8FA3]">
+                      <div className="pt-1 border-t border-[#27272a] flex items-center justify-between font-mono text-[9px] text-[#71717a]">
                         <span>
                           {ksp.iconSvg
                             ? 'SVG_PATH::48x48_BEZIER_LOCKED'
@@ -819,7 +821,7 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                               });
                             }
                           }}
-                          className="text-[#00E5FF] hover:underline whitespace-nowrap cursor-pointer"
+                          className="text-zinc-300 hover:text-white hover:underline whitespace-nowrap cursor-pointer"
                         >
                           {isReady ? t.cycleVectorBtn : t.synthNowBtn}
                         </button>
@@ -835,20 +837,20 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                   type="button"
                   onClick={onTriggerVectorCraft}
                   disabled={isVectorCraftRunning}
-                  className="w-full h-9 px-3 bg-[#5322FF] hover:bg-[#6438FF] disabled:opacity-60 border border-[#00E5FF] text-white font-mono text-xs font-semibold tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
+                  className="w-full h-8 px-3 bg-[#18181b] hover:bg-[#27272a] disabled:opacity-60 border border-[#27272a] hover:border-[#3f3f46] text-zinc-200 hover:text-white font-mono text-xs font-semibold tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   {isVectorCraftRunning ? (
                     <>
                       <RefreshCw
-                        size={16}
-                        strokeWidth={1.25}
-                        className="animate-spin text-[#00E5FF]"
+                        size={14}
+                        strokeWidth={1.5}
+                        className="animate-spin text-zinc-400"
                       />
                       <span>{t.synthesizingSvg}</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles size={16} strokeWidth={1.25} className="text-[#00E5FF]" />
+                      <Sparkles size={14} strokeWidth={1.5} className="text-[#71717a]" />
                       <span>
                         {t.triggerVectorCraftBtn}{' '}
                         {pendingKspCount > 0 ? `(${pendingKspCount})` : ''}
@@ -858,9 +860,9 @@ export const AgentIngestionDock: React.FC<AgentIngestionDockProps> = ({
                 </button>
 
                 {vectorCraftLog && (
-                  <div className="p-2 bg-[#05050A] border border-[#2D2D44] font-mono text-[10px] text-[#10B981] flex items-center justify-between">
+                  <div className="p-2 bg-[#18181b] border border-[#27272a] font-mono text-[10px] text-[#10B981] flex items-center justify-between">
                     <span className="truncate">{vectorCraftLog}</span>
-                    <span className="text-[#00E5FF] shrink-0 ml-2">[OK]</span>
+                    <span className="text-zinc-400 shrink-0 ml-2">[OK]</span>
                   </div>
                 )}
               </div>
